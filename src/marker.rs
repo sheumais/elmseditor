@@ -1,9 +1,3 @@
-#[derive(Debug, Clone)]
-pub struct ZoneMarker2D {
-    pub zone_id: u16,
-    pub markers: Vec<MarkerFlat>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MarkerFlat {
     pub position: Position3D,
@@ -12,26 +6,11 @@ pub struct MarkerFlat {
     pub active: bool,
 }
 
-#[derive(Debug)]
-pub struct MarkerRotatable {
-    pub position: Position3D,
-    pub rotation: Rotation3D,
-    pub icon: String,
-    pub size: u8,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Position3D {
     pub x: i32,
     pub y: i32,
     pub z: i32,
-}
-
-#[derive(Debug)]
-pub struct Rotation3D {
-    pub pitch: f32,
-    pub yaw: f32,
-    pub roll: f32,
 }
 
 pub fn icon_number_to_string(icon_number: u16) -> String {
