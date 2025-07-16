@@ -4,6 +4,8 @@ pub struct MarkerFlat {
     pub icon: String,
     pub size: u8,
     pub active: bool,
+    pub id: u16,
+    pub format: MarkerFormat,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -11,6 +13,12 @@ pub struct Position3D {
     pub x: i32,
     pub y: i32,
     pub z: i32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum MarkerFormat {
+    Bitrock,
+    Akamatsu
 }
 
 pub fn icon_number_to_string(icon_number: u16) -> String {

@@ -7,24 +7,26 @@ use regex::Regex;
 mod marker;
 mod zone;
 
-use crate::{marker::{icon_number_to_string, string_to_icon_number, MarkerFlat, Position3D}, zone::{populate_zone_data, Map}};
+use crate::{marker::{icon_number_to_string, string_to_icon_number, MarkerFlat, MarkerFormat, Position3D}, zone::{populate_zone_data, Map}};
 
 fn parse_elms_string(elms_string: &str) -> HashMap<u16, Vec<MarkerFlat>> {
     let re = Regex::new(r"/(?P<zone>\d+)//(?P<x>\d+),(?P<y>\d+),(?P<z>\d+),(?P<icon>\d+)/").unwrap();
     let mut result: HashMap<u16, Vec<MarkerFlat>> = HashMap::new();
     let mut seen: HashMap<u16, HashSet<MarkerFlat>> = HashMap::new();
 
+    let mut i = 0;
     for caps in re.captures_iter(elms_string) {
         let zone_id: u16 = caps["zone"].parse().unwrap();
         let x = caps["x"].parse().unwrap();
         let y = caps["y"].parse().unwrap();
         let z = caps["z"].parse().unwrap();
         let icon = icon_number_to_string(caps["icon"].parse().unwrap());
-        let marker = MarkerFlat { position: Position3D { x, y, z }, icon, size: 1, active: true };
+        let marker = MarkerFlat { position: Position3D { x, y, z }, icon, size: 1, active: true, id: i, format: MarkerFormat::Bitrock};
 
         let set = seen.entry(zone_id).or_default();
         if set.insert(marker.clone()) {
             result.entry(zone_id).or_default().push(marker);
+            i += 1;
         }
     }
 
@@ -186,111 +188,129 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct MarkerListPanelProps {
-    pub markers: Vec<MarkerFlat>,
+    pub zone_markers: Vec<MarkerFlat>,
+    pub current_markers: Vec<MarkerFlat>,
     pub on_update: Callback<Vec<MarkerFlat>>,
 }
 
 #[function_component(MarkerListPanel)]
 fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
-    let markers = use_state(|| props.markers.clone());
-
+    let current = use_state(|| props.current_markers.clone());
     {
-        let markers = markers.clone();
-        let props_markers = props.markers.clone();
-        use_effect_with(props.markers.clone(), move |_| {
-            markers.set(props_markers);
+        let cm_clone = props.current_markers.clone();
+        let current = current.clone();
+        use_effect_with(props.current_markers.clone(), move |_| {
+            current.set(cm_clone);
             || ()
         });
     }
 
-    let on_update = props.on_update.clone();
+    let zone_template = props.zone_markers.clone();
+    let on_update_cb  = props.on_update.clone();
     let update_marker = {
-        let markers = markers.clone();
-        Callback::from(move |(index, field, value): (usize, String, String)| {
-            let mut new_markers = (*markers).clone();
-            if let Some(marker) = new_markers.get_mut(index) {
+        let current       = current.clone();
+        let zone_for_upd  = zone_template.clone();
+        let emit_for_upd  = on_update_cb.clone();
+        Callback::from(move |(pos, field, val): (usize, String, String)| {
+            let mut new_current = (*current).clone();
+            if let Some(m) = new_current.get_mut(pos) {
                 match field.as_str() {
-                    "x" => if let Ok(v) = value.parse() { marker.position.x = v },
-                    "y" => if let Ok(v) = value.parse() { marker.position.y = v },
-                    "z" => if let Ok(v) = value.parse() { marker.position.z = v },
-                    "icon" => marker.icon = value,
+                    "x" => if let Ok(x) = val.parse() { m.position.x = x },
+                    "y" => if let Ok(y) = val.parse() { m.position.y = y },
+                    "z" => if let Ok(z) = val.parse() { m.position.z = z },
+                    "icon" => m.icon = val.clone(),
                     _ => {}
                 }
             }
-            markers.set(new_markers.clone());
-            on_update.emit(new_markers);
+            current.set(new_current.clone());
+            let rebuilt: Vec<MarkerFlat> = zone_for_upd
+                .iter()
+                .map(|zm| {
+                    new_current
+                        .iter()
+                        .find(|cm| cm.id == zm.id)
+                        .cloned()
+                        .unwrap_or_else(|| zm.clone())
+                })
+                .collect();
+            emit_for_upd.emit(rebuilt);
         })
     };
 
-    let on_toggle = {
-        let markers = markers.clone();
-        let on_update = props.on_update.clone();
-        Callback::from(move |(i, active): (usize, bool)| {
-            let mut new_markers = (*markers).clone();
-            if let Some(marker) = new_markers.get_mut(i) {
-                marker.active = active;
+    let toggle_active = {
+        let current        = current.clone();
+        let zone_for_toggle = zone_template.clone();
+        let emit_for_toggle = on_update_cb.clone();
+        Callback::from(move |(pos, is_on): (usize, bool)| {
+            let mut new_current = (*current).clone();
+            if let Some(m) = new_current.get_mut(pos) {
+                m.active = is_on;
             }
-            markers.set(new_markers.clone());
-            on_update.emit(new_markers);
+            current.set(new_current.clone());
+
+            let rebuilt = zone_for_toggle
+                .iter()
+                .map(|zm| {
+                    new_current
+                        .iter()
+                        .find(|cm| cm.id == zm.id)
+                        .cloned()
+                        .unwrap_or_else(|| zm.clone())
+                })
+                .collect();
+            emit_for_toggle.emit(rebuilt);
         })
     };
 
     html! {
-        <div style="width: 670px; padding: 10px; overflow-y: auto;">
-            <h1 style="text-align:center;">{"Markers"}</h1>
-            <ul>
-                { for markers.iter().enumerate().map(|(i, marker)| {
-                    let on_toggle = on_toggle.clone();
-                    let update_marker = update_marker.clone();
-                    let update_marker2 = update_marker.clone();
-                    let update_marker3 = update_marker.clone();
-                    let marker_clone = marker.clone();
+      <div style="width:670px;padding:10px;overflow-y:auto;">
+        <h1 style="text-align:center;">{"Markers"}</h1>
+        <ul style="padding-left:0px;">
+        { for current.iter().enumerate().map(|(i, marker)| {
+            let upd = update_marker.clone();
+            let tog = toggle_active.clone();
+            html! {
+            <li key={marker.id} style="display:flex;align-items:center;gap:8px;margin-bottom:10px;justify-content:center;">
+                <img src={format!("static/icons/{}", marker.icon)} style="height:20px;"/>
+                { for ["x","y","z"].iter().map(move |&axis| {
+                    let updt = upd.clone();
+                    let val = match axis {
+                        "x" => marker.position.x.to_string(),
+                        "y" => marker.position.y.to_string(),
+                        "z" => marker.position.z.to_string(),
+                        _   => String::new(),
+                    };
                     html! {
-                        <li key={i} style="margin-bottom: 10px;display: flex; height:20px; justify-content: center;">
-                            <div style="display: flex; align-items: center; gap: 4px; width: 25px">
-                                <img src={format!("static/icons/{}", marker_clone.icon)} style="height: 100%;" />
-                            </div>
-                            <label style="margin-left:5px;">{"X: "}<input
-                                type="number"
-                                style="width: 75px; margin-left:5px;"
-                                value={marker_clone.position.x.to_string()}
-                                oninput={Callback::from(move |e: InputEvent| {
-                                    let input: HtmlInputElement = e.target_unchecked_into();
-                                    update_marker.emit((i, "x".to_string(), input.value()));
-                                })}
-                            /></label>
-                            <label style="margin-left:5px;">{" Y: "}<input
-                                type="number"
-                                style="width: 75px; margin-left:5px;"
-                                value={marker_clone.position.y.to_string()}
-                                oninput={Callback::from(move |e: InputEvent| {
-                                    let input: HtmlInputElement = e.target_unchecked_into();
-                                    update_marker2.emit((i, "y".to_string(), input.value()));
-                                })}
-                            /></label>
-                            <label style="margin-left:5px;">{" Z: "}<input
-                                type="number"
-                                style="width: 75px; margin-left:5px;"
-                                value={marker_clone.position.z.to_string()}
-                                oninput={Callback::from(move |e: InputEvent| {
-                                    let input: HtmlInputElement = e.target_unchecked_into();
-                                    update_marker3.emit((i, "z".to_string(), input.value()));
-                                })}
-                            /></label>
-                            <label style="margin-left:5px;"><input
-                                type="checkbox"
-                                style="margin-left:5px;"
-                                checked={marker_clone.active}
-                                onchange={Callback::from(move |e: Event| {
-                                    let input: HtmlInputElement = e.target_unchecked_into();
-                                    on_toggle.emit((i, input.checked()));
-                                })}
-                            /></label>
-                        </li>
+                    <label>
+                        {format!("{}: ", axis.to_uppercase())}
+                        <input
+                        type="number"
+                        value={val.clone()}
+                        oninput={Callback::from(move |e: InputEvent| {
+                            let inp: HtmlInputElement = e.target_unchecked_into();
+                            updt.emit((i, axis.to_string(), inp.value()));
+                        })}
+                        style="width:75px;"
+                        />
+                    </label>
                     }
-                })}
-            </ul>
-        </div>
+                }) }
+                <label>
+                    <input
+                    type="checkbox"
+                    checked={marker.active}
+                    onchange={Callback::from(move |e: Event| {
+                        let inp: HtmlInputElement = e.target_unchecked_into();
+                        tog.emit((i, inp.checked()));
+                    })}
+                    style="margin-left:8px;"
+                    />
+                </label>
+            </li>
+            }
+        }) }
+        </ul>
+      </div>
     }
 }
 
@@ -301,16 +321,20 @@ fn app() -> Html {
     let selected_zone_index = use_state(|| 0_usize);
     let selected_map_index = use_state(|| 0_usize);
     let elms_input = use_state(|| String::new());
-    let parsed = use_state(|| HashMap::<u16, Vec<MarkerFlat>>::new());
+    let parsed_markers = use_state(|| HashMap::<u16, Vec<MarkerFlat>>::new());
     let zoom = use_state(|| 1.0);
     let pan = use_state(|| (0.0, 0.0));
 
     let on_map_change = {
         let selected_map_index = selected_map_index.clone();
+        let zoom = zoom.clone();
+        let pan = pan.clone();
         Callback::from(move |e: Event| {
             let sel: HtmlInputElement = e.target_unchecked_into();
             if let Ok(idx) = sel.value().parse::<usize>() {
                 selected_map_index.set(idx);
+                zoom.set(1.0);
+                pan.set( (0.0, 0.0) );
             }
         })
     };
@@ -404,7 +428,7 @@ fn app() -> Html {
 
     let oninput = {
         let elms_input = elms_input.clone();
-        let parsed = parsed.clone();
+        let parsed_markers = parsed_markers.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
             let v = input.value();
@@ -414,27 +438,27 @@ fn app() -> Html {
 
             if !v.is_empty() {
                 let new_map = parse_elms_string(&v);
-                // web_sys::console::log_1(&format!("Parsed map entries: {}", new_map.len()).into());
-                parsed.set(new_map);
+                // web_sys::console::log_1(&format!("parsed_markers map entries: {}", new_map.len()).into());
+                parsed_markers.set(new_map);
             } else {
-                parsed.set(HashMap::new());
+                parsed_markers.set(HashMap::new());
             }
         })
     };
 
     {
-        let parsed = parsed.clone();
+        let parsed_markers = parsed_markers.clone();
         let zone_ids = zone_ids.clone();
         let selected_zone_index = selected_zone_index.clone();
         let selected_map_index = selected_map_index.clone();
         let zoom = zoom.clone();
         let pan = pan.clone();
-        use_effect_with(parsed.clone(),
-            move |parsed| {
-                let zones: Vec<u16> = parsed.keys().cloned().collect();
-                // web_sys::console::log_1(&format!("use_effect parsed zones: {:?}", zones).into());
+        use_effect_with(parsed_markers.clone(),
+            move |parsed_markers| {
+                let zones: Vec<u16> = parsed_markers.keys().cloned().collect();
+                // web_sys::console::log_1(&format!("use_effect parsed_markers zones: {:?}", zones).into());
 
-                if !parsed.is_empty() {
+                if !parsed_markers.is_empty() {
                     let current_zone = zone_ids[*selected_zone_index];
                     let mut keys = zones.clone();
                     keys.sort();
@@ -445,7 +469,8 @@ fn app() -> Html {
                             selected_zone_index.set(idx);
                             selected_map_index.set(0);
                             zoom.set(1.0);
-                            pan.set( (0f64, 0f64) );
+                            pan.set((0f64, 0f64));
+                            last.set((0f64, 0f64));
                         }
                     }
                 }
@@ -457,28 +482,42 @@ fn app() -> Html {
 
 
     let update_markers = {
-        let parsed = parsed.clone();
+        let parsed_markers = parsed_markers.clone();
         let elms_input = elms_input.clone();
         let selected_zone_index = selected_zone_index.clone();
         let zone_ids = zone_ids.clone();
         Callback::from(move |new_markers: Vec<MarkerFlat>| {
-            let mut new_map = (*parsed).clone();
+            let mut new_map = (*parsed_markers).clone();
             let zone_id = zone_ids[*selected_zone_index];
             new_map.insert(zone_id, new_markers.clone());
+            let mut all_zones: Vec<u16> = new_map.keys().cloned().collect();
+            all_zones.sort();
 
             let mut result = String::new();
-            if let Some(markers) = new_map.get(&zone_id) {
-                let mut active_markers: Vec<_> = markers.iter().filter(|m| m.active).collect();
-                active_markers.sort_by_key(|m| string_to_icon_number(&m.icon));
-                for m in active_markers {
-                    result.push_str(&format!("/{}//{},{},{},{}/", zone_id, m.position.x, m.position.y, m.position.z, string_to_icon_number(&m.icon)));
+            for zone in all_zones {
+                if let Some(markers) = new_map.get(&zone) {
+                    let mut active: Vec<_> = markers.iter()
+                        .filter(|m| m.active)
+                        .collect();
+                    active.sort_by_key(|m| string_to_icon_number(&m.icon));
+
+                    for m in active {
+                        result.push_str(&format!(
+                            "/{}//{},{},{},{}/",
+                            zone,
+                            m.position.x,
+                            m.position.y,
+                            m.position.z,
+                            string_to_icon_number(&m.icon),
+                        ));
+                    }
                 }
             }
             let normalized = result.trim();
             if normalized != elms_input.trim() {
                 elms_input.set(normalized.to_string());
             }
-            parsed.set(new_map);
+            parsed_markers.set(new_map);
         })
     };
 
@@ -498,7 +537,8 @@ fn app() -> Html {
     let view_max_x = (w - pan.0) / zoom;
     let view_min_z = -pan.1 / zoom;
     let view_max_z = (h - pan.1) / zoom;
-    let zone_markers = parsed.get(&zone.id).cloned().unwrap_or_default();
+    let zone_markers = parsed_markers.get(&zone.id).cloned().unwrap_or_default();
+    let zone_marker_clone = zone_markers.clone();
     let current_markers: Vec<MarkerFlat> = zone_markers.into_iter()
         .filter(|m| {
             let nx = (m.position.x as f64 - map.scale_data.min_x as f64)
@@ -566,7 +606,7 @@ fn app() -> Html {
                 </div>
             }
 
-            <MarkerListPanel markers={current_markers} on_update={update_markers} />
+            <MarkerListPanel zone_markers={zone_marker_clone} current_markers={current_markers} on_update={update_markers} />
         </div>
     }
 }
