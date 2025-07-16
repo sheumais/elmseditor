@@ -81,16 +81,17 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
             let h = canvas.height() as f64;
 
             ctx.set_transform(zoom, 0.0, 0.0, zoom, pan.0, pan.1).unwrap();
+            // ctx.set_image_smoothing_enabled(false);
             ctx.clear_rect(0.0, 0.0, w / zoom, h / zoom);
 
             let tile_size = w / (map.count as f64);
-            let overlap = 1.0;
+            let overlap = 0.5;
 
             for (i, img) in tile_images.iter().enumerate() {
                 let row = (i as u8) / map.count;
                 let col = (i as u8) % map.count;
-                let x = col as f64 * tile_size;
-                let y = row as f64 * tile_size;
+                let x = (col as f64 * tile_size).ceil();
+                let y = (row as f64 * tile_size).ceil();
 
                 if img.complete() {
                     ctx
@@ -245,8 +246,8 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                     let update_marker3 = update_marker.clone();
                     let marker_clone = marker.clone();
                     html! {
-                        <li key={i} style="margin-bottom: 10px;display: flex; height:20px;">
-                            <div style="display: flex; align-items: center; gap: 4px;">
+                        <li key={i} style="margin-bottom: 10px;display: flex; height:20px; justify-content: center;">
+                            <div style="display: flex; align-items: center; gap: 4px; width: 25px">
                                 <img src={format!("static/icons/{}", marker_clone.icon)} style="height: 100%;" />
                             </div>
                             <label style="margin-left:5px;">{"X: "}<input
@@ -482,31 +483,40 @@ fn app() -> Html {
     };
 
     let zone = zones.get(*selected_zone_index).unwrap().clone();
-    web_sys::console::log_1(&format!("zone_index: {}, zone: {:?}", *selected_zone_index, zone).into());
+    // web_sys::console::log_1(&format!("zone_index: {}, zone: {:?}", *selected_zone_index, zone).into());
     let map = zone.maps.get(*selected_map_index).unwrap().clone();
-
-    let zone_markers = parsed.get(&zone.id).cloned().unwrap_or_default();
-    let current_markers: Vec<MarkerFlat> = zone_markers.into_iter()
-        .filter(|m| {
-            let x = m.position.x as f32;
-            let z = m.position.z as f32;
-            x >= map.scale_data.min_x && x <= map.scale_data.max_x &&
-            z >= map.scale_data.min_z && z <= map.scale_data.max_z
-        })
-        .collect();
 
     let canvas_width = 950;
     let canvas_height = 950;
 
+    let w = canvas_width as f64;
+    let h = canvas_height as f64;
+    let zoom = *zoom.clone();
+    let pan = *pan.clone();
+
+    let view_min_x = -pan.0 / zoom;
+    let view_max_x = (w - pan.0) / zoom;
+    let view_min_z = -pan.1 / zoom;
+    let view_max_z = (h - pan.1) / zoom;
+    let zone_markers = parsed.get(&zone.id).cloned().unwrap_or_default();
+    let current_markers: Vec<MarkerFlat> = zone_markers.into_iter()
+        .filter(|m| {
+            let nx = (m.position.x as f64 - map.scale_data.min_x as f64)
+                / (map.scale_data.max_x as f64 - map.scale_data.min_x as f64);
+            let nz = (m.position.z as f64 - map.scale_data.min_z as f64)
+                / (map.scale_data.max_z as f64 - map.scale_data.min_z as f64);
+            let world_x = nx * w;
+            let world_z = nz * h;
+
+            world_x >= view_min_x
+            && world_x <= view_max_x
+            && world_z >= view_min_z
+            && world_z <= view_max_z
+        })
+        .collect();
+
     html! {
         <div style="display: flex; flex-direction: row; background-color: #333; color: #fff; font-family: 'Univers', sans-serif;">
-            <div>
-                <select onchange={on_map_change}>
-                    { for (0..zone.maps.len()).map(|i| html!{
-                        <option value={i.to_string()} selected={i == *selected_map_index}>{i}</option>
-                    }) }
-                </select>
-            </div>
             <div
                 {onwheel}
                 {onmousedown}
@@ -516,15 +526,14 @@ fn app() -> Html {
                     display: flex;
                     flex-flow: column nowrap;
                     box-sizing: border-box;
-                    margin-left: 5%;
                     overflow: hidden;
                 ">
                 <div>
                     <CanvasMap
                         map={map.clone()}
                         markers={current_markers.clone()}
-                        zoom={*zoom}
-                        pan={*pan}
+                        zoom={zoom}
+                        pan={pan}
                         width={canvas_width}
                         height={canvas_height}
                     />
@@ -542,6 +551,20 @@ fn app() -> Html {
                         margin-top: 10px;", canvas_width)}
                 />
             </div>
+
+            if zone.maps.len() > 1 {
+                <div style="position: absolute; top: 1em; left: 1em;">
+                    <select onchange={on_map_change}>
+                        {
+                            for zone.maps.iter().enumerate().map(|(i, map)| html! {
+                                <option value={i.to_string()} selected={i == *selected_map_index}>
+                                    { &map.name }
+                                </option>
+                            })
+                        }
+                    </select>
+                </div>
+            }
 
             <MarkerListPanel markers={current_markers} on_update={update_markers} />
         </div>
