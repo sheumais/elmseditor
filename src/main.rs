@@ -1,8 +1,10 @@
 use std::collections::{HashMap, HashSet};
+use stylist::css;
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlImageElement, HtmlInputElement, MouseEvent, WheelEvent};
 use yew::prelude::*;
 use regex::Regex;
+use yew_icons::{Icon, IconId};
 
 mod marker;
 mod zone;
@@ -83,45 +85,45 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
             let h = canvas.height() as f64;
 
             ctx.set_transform(zoom, 0.0, 0.0, zoom, pan.0, pan.1).unwrap();
-            // ctx.set_image_smoothing_enabled(false);
+            ctx.set_image_smoothing_enabled(false);
             ctx.clear_rect(0.0, 0.0, w / zoom, h / zoom);
 
             let tile_size = w / (map.count as f64);
-            let overlap = 0.5;
 
             for (i, img) in tile_images.iter().enumerate() {
                 let row = (i as u8) / map.count;
                 let col = (i as u8) % map.count;
-                let x = (col as f64 * tile_size).ceil();
-                let y = (row as f64 * tile_size).ceil();
+
+                let raw_x1 = col as f64 * tile_size;
+                let raw_y1 = row as f64 * tile_size;
+                let raw_x2 = (col as f64 + 1.0) * tile_size;
+                let raw_y2 = (row as f64 + 1.0) * tile_size;
+                let x = raw_x1.floor();
+                let y = raw_y1.floor();
+                let dw = raw_x2.ceil() - x;
+                let dh = raw_y2.ceil() - y;
 
                 if img.complete() {
-                    ctx
-                        .draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-                            img,
-                            0.0, 0.0,
-                            img.width() as f64,
-                            img.height() as f64,
-                            x, y,
-                            tile_size + overlap,
-                            tile_size + overlap,
-                        )
-                        .unwrap();
+                    ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+                        img,
+                        0.0, 0.0,
+                        img.width() as f64,
+                        img.height() as f64,
+                        x, y,
+                        dw, dh,
+                    ).unwrap();
                 } else {
                     let ctx_clone = ctx.clone();
                     let img_clone = img.clone();
                     let draw = Closure::wrap(Box::new(move || {
-                        ctx_clone
-                            .draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-                                &img_clone,
-                                0.0, 0.0,
-                                img_clone.width() as f64,
-                                img_clone.height() as f64,
-                                x, y,
-                                tile_size + overlap,
-                                tile_size + overlap,
-                            )
-                            .unwrap();
+                        ctx_clone.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+                            &img_clone,
+                            0.0, 0.0,
+                            img_clone.width() as f64,
+                            img_clone.height() as f64,
+                            x, y,
+                            dw, dh,
+                        ).unwrap();
                     }) as Box<dyn Fn()>);
                     img.set_onload(Some(draw.as_ref().unchecked_ref()));
                     draw.forget();
@@ -263,53 +265,61 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
     };
 
     html! {
-      <div style="width:670px;padding:10px;overflow-y:auto;">
+        <div style="
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+            margin-bottom: 5vh;">
         <h1 style="text-align:center;">{"Markers"}</h1>
-        <ul style="padding-left:0px;">
-        { for current.iter().enumerate().map(|(i, marker)| {
-            let upd = update_marker.clone();
-            let tog = toggle_active.clone();
-            html! {
-            <li key={marker.id} style="display:flex;align-items:center;gap:8px;margin-bottom:10px;justify-content:center;">
-                <img src={format!("static/icons/{}", marker.icon)} style="height:20px;"/>
-                { for ["x","y","z"].iter().map(move |&axis| {
-                    let updt = upd.clone();
-                    let val = match axis {
-                        "x" => marker.position.x.to_string(),
-                        "y" => marker.position.y.to_string(),
-                        "z" => marker.position.z.to_string(),
-                        _   => String::new(),
-                    };
-                    html! {
+        <div style="
+            min-height: 0;
+            overflow-y: auto;">
+            <ul style="padding:0; margin:0;">
+            { for current.iter().enumerate().map(|(i, marker)| {
+                let upd = update_marker.clone();
+                let tog = toggle_active.clone();
+                html! {
+                <li key={marker.id} style="display: flex; align-items: center; gap: 1em; justify-content: center;">
+                    <img src={format!("static/icons/{}", marker.icon)} style="height: 2em;"/>
+                    { for ["x","y","z"].iter().map(move |&axis| {
+                        let updt = upd.clone();
+                        let val = match axis {
+                            "x" => marker.position.x.to_string(),
+                            "y" => marker.position.y.to_string(),
+                            "z" => marker.position.z.to_string(),
+                            _   => String::new(),
+                        };
+                        html! {
+                        <label>
+                            {format!("{}: ", axis.to_uppercase())}
+                            <input
+                            type="number"
+                            value={val.clone()}
+                            oninput={Callback::from(move |e: InputEvent| {
+                                let inp: HtmlInputElement = e.target_unchecked_into();
+                                updt.emit((i, axis.to_string(), inp.value()));
+                            })}
+                            style="width:75px;"
+                            />
+                        </label>
+                        }
+                    }) }
                     <label>
-                        {format!("{}: ", axis.to_uppercase())}
                         <input
-                        type="number"
-                        value={val.clone()}
-                        oninput={Callback::from(move |e: InputEvent| {
+                        type="checkbox"
+                        checked={marker.active}
+                        onchange={Callback::from(move |e: Event| {
                             let inp: HtmlInputElement = e.target_unchecked_into();
-                            updt.emit((i, axis.to_string(), inp.value()));
+                            tog.emit((i, inp.checked()));
                         })}
-                        style="width:75px;"
+                        style="margin-left:8px;"
                         />
                     </label>
-                    }
-                }) }
-                <label>
-                    <input
-                    type="checkbox"
-                    checked={marker.active}
-                    onchange={Callback::from(move |e: Event| {
-                        let inp: HtmlInputElement = e.target_unchecked_into();
-                        tog.emit((i, inp.checked()));
-                    })}
-                    style="margin-left:8px;"
-                    />
-                </label>
-            </li>
-            }
-        }) }
-        </ul>
+                </li>
+                }
+            }) }
+            </ul>
+        </div>
       </div>
     }
 }
@@ -324,6 +334,9 @@ fn app() -> Html {
     let parsed_markers = use_state(|| HashMap::<u16, Vec<MarkerFlat>>::new());
     let zoom = use_state(|| 1.0);
     let pan = use_state(|| (0.0, 0.0));
+    let canvas_size = use_state(|| 0);
+    let window_width = use_state(|| 0.0);
+    let window_height = use_state(|| 0.0);
 
     let on_map_change = {
         let selected_map_index = selected_map_index.clone();
@@ -480,7 +493,6 @@ fn app() -> Html {
         );
     }
 
-
     let update_markers = {
         let parsed_markers = parsed_markers.clone();
         let elms_input = elms_input.clone();
@@ -521,12 +533,63 @@ fn app() -> Html {
         })
     };
 
+    {
+        let canvas_size = canvas_size.clone();
+        let window_width = window_width.clone();
+        let window_height = window_height.clone();
+        use_effect_with((),
+            move |_| {
+                let win = web_sys::window().expect("no global `window` exists");
+                let win2 = win.clone();
+                let set_size = move || {
+                    let w = win2
+                        .inner_width()
+                        .ok()
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(950.0);
+                    let h = win2
+                        .inner_height()
+                        .ok()
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(950.0);
+                    let size = (w.min(h)) as u32;
+                    window_width.set(w);
+                    window_height.set(h);
+                    canvas_size.set(size);
+                };
+
+                set_size();
+
+                let resize_closure = Closure::wrap(Box::new(move |_ev: web_sys::Event| {
+                    set_size();
+                }) as Box<dyn FnMut(_)>);
+
+                win
+                    .add_event_listener_with_callback(
+                        "resize",
+                        resize_closure.as_ref().unchecked_ref(),
+                    )
+                    .expect("failed to register resize listener");
+
+                resize_closure.forget();
+                || ()
+            },
+        );
+    }
+
+
+    let logo_style = css!(r#"
+        width: 2em;
+        height: 2em;
+        color: #fff;
+    "#);
+
     let zone = zones.get(*selected_zone_index).unwrap().clone();
     // web_sys::console::log_1(&format!("zone_index: {}, zone: {:?}", *selected_zone_index, zone).into());
     let map = zone.maps.get(*selected_map_index).unwrap().clone();
 
-    let canvas_width = 950;
-    let canvas_height = 950;
+    let canvas_width = *canvas_size;
+    let canvas_height = *canvas_size;
 
     let w = canvas_width as f64;
     let h = canvas_height as f64;
@@ -556,7 +619,7 @@ fn app() -> Html {
         .collect();
 
     html! {
-        <div style="display: flex; flex-direction: row; background-color: #333; color: #fff; font-family: 'Univers', sans-serif;">
+        <div style={format!("display: flex; background-color: #333; color: #fff; font-family: 'Univers', sans-serif; max-height: {}px; overflow: hidden;", *canvas_size)}>
             <div
                 {onwheel}
                 {onmousedown}
@@ -578,18 +641,6 @@ fn app() -> Html {
                         height={canvas_height}
                     />
                 </div>
-
-                <textarea
-                    oninput={oninput}
-                    value={(*elms_input).clone()}
-                    autofocus=true
-                    placeholder="Elm's string"
-                    style={format!("
-                        width: {}px;
-                        box-sizing: border-box;
-                        height: 50px;
-                        margin-top: 10px;", canvas_width)}
-                />
             </div>
 
             if zone.maps.len() > 1 {
@@ -606,7 +657,38 @@ fn app() -> Html {
                 </div>
             }
 
-            <MarkerListPanel zone_markers={zone_marker_clone} current_markers={current_markers} on_update={update_markers} />
+            <div style={format!("width: {}px; height: {}px; padding: 1em;", window_height.max(*window_width) - (*canvas_size as f64), *window_height)}>
+                <div> 
+                    <textarea
+                        oninput={oninput}
+                        value={(*elms_input).clone()}
+                        autofocus=true
+                        placeholder="Elm's string"
+                        style="
+                            width: 100%;
+                            border-radius: 1em;
+                            height: 4em;
+                            padding-left: 0.5em;
+                            resize: none;"
+                    />
+                    <MarkerListPanel zone_markers={zone_marker_clone} current_markers={current_markers} on_update={update_markers} />
+                </div>
+                
+                <div style="position: absolute; bottom: 1em; right: 1em; display: flex; gap: 1em;">
+                    <a
+                        href={"https://discord.gg/FjJjXHjUQ4"}
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        <Icon icon_id={IconId::BootstrapDiscord} class={logo_style.clone()} />
+                    </a>
+                    <a
+                        href={"https://github.com/sheumais/elmseditor"}
+                        target="_blank"
+                        rel="noopener noreferrer">
+                        <Icon icon_id={IconId::BootstrapGithub} class={logo_style.clone()} />
+                    </a>
+                </div>
+            </div>
         </div>
     }
 }
