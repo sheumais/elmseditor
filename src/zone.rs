@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 pub struct Zone {
     pub id: u16,
     pub maps: Vec<Map>,
+    pub name: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -304,6 +305,30 @@ const MAP_METAS: &[MapMeta] = &[
     //     count: 5,
     //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
     // },
+    MapMeta {
+        name: "Maw of Lorkhaj",
+        map_id: 997,
+        zone_id: 725,
+        slug: "reapersmarch/maw_of_lorkaj_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000191064, min_x: 71481.0, max_x: 123819.0, min_z: 113086.0, max_z: 165424.0 }
+    },
+    MapMeta {
+        name: "Suthay Sanctuary",
+        map_id: 999,
+        zone_id: 725,
+        slug: "reapersmarch/mawlorkajsuthaysanctuary_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000550497, min_x: 70411.0, max_x: 88576.0, min_z: 136138.0, max_z: 154304.0 }
+    },
+    MapMeta {
+        name: "The High Lunarium",
+        map_id: 1000,
+        zone_id: 725,
+        slug: "reapersmarch/mawlorkajsevenriddles_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000224066, min_x: 23734.0, max_x: 68364.0, min_z: 167379.0, max_z: 212009.0 }
+    },
 ];
 
 fn populate_map_data() -> Vec<Map> {
@@ -346,6 +371,23 @@ pub fn populate_zone_data() -> Vec<Zone> {
             Zone {
                 id: zone_id,
                 maps,
+                name: match zone_id {
+                    636 => "Hel Ra Citadel".to_string(),
+                    638 => "Aetherian Archive".to_string(),
+                    639 => "Sanctum Ophidia".to_string(),
+                    725 => "Maw of Lorkhaj".to_string(),
+                    975 => "Halls of Fabrication".to_string(),
+                    1000 => "Asylum Sanctorium".to_string(),
+                    1051 => "Cloudrest".to_string(),
+                    1121 => "Sunspire".to_string(),
+                    1196 => "Kyne's Aegis".to_string(),
+                    1263 => "Rockgrove".to_string(),
+                    1344 => "Dreadsail Reef".to_string(),
+                    1427 => "Sanity's Edge".to_string(),
+                    1478 => "Lucent Citadel".to_string(),
+                    1548 => "Ossein Cage".to_string(),
+                    _ => "Unknown Trial Map".to_string(),
+                }
             }
         })
         .collect()
