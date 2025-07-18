@@ -193,7 +193,7 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
     }
 
     html! {
-        <canvas ref={canvas_ref} style="cursor: grab;" />
+        <canvas ref={canvas_ref} style="cursor: grab; min-width: 300px; min-height: 300px;" />
     }
 }
 
@@ -801,7 +801,7 @@ fn app() -> Html {
         .collect();
 
     html! {
-        <div style={format!("display: flex; background-color: #333; color: #fff; font-family: 'Univers', sans-serif; max-height: {}px; overflow: hidden;", *canvas_size)}>
+        <div style={format!("display: flex; background-color: #333; color: #fff; font-family: 'Univers', sans-serif; max-height: {}px; flex-wrap: wrap;", *canvas_size)}>
             <div
                 {onwheel}
                 {onmousedown}
@@ -812,18 +812,20 @@ fn app() -> Html {
                     display: flex;
                     flex-flow: column nowrap;
                     box-sizing: border-box;
-                    overflow: hidden;
+                    flex-grow: 1;
+                    flex-shrink: 1;
+                    flex-basis: 300px;
+                    justify-content: center;
+                    text-align: center;
                 ">
-                <div>
-                    <CanvasMap
-                        map={map.clone()}
-                        markers={current_markers.clone()}
-                        zoom={zoom}
-                        pan={pan}
-                        width={canvas_width}
-                        height={canvas_height}
-                    />
-                </div>
+                <CanvasMap
+                    map={map.clone()}
+                    markers={current_markers.clone()}
+                    zoom={zoom}
+                    pan={pan}
+                    width={canvas_width}
+                    height={canvas_height}
+                />
             </div>
 
             <div style="position: absolute; top: 1em; left: 1em;">
@@ -831,10 +833,23 @@ fn app() -> Html {
                 if zone.maps.len() > 1 {
                     <select onchange={on_map_change}>
                         {
-                            for zone.maps.iter().enumerate().map(|(i, map)| html! {
-                                <option value={i.to_string()} selected={i == *selected_map_index}>
-                                    { &map.name }
-                                </option>
+                            for zone.maps.iter().enumerate().map(|(i, map)| {
+                                let marker_count = zone_marker_clone
+                                    .iter()
+                                    .filter(|m| m.map_id == map.map_id)
+                                    .count();
+
+                                let label = if marker_count > 0 {
+                                    format!("[{}] {}", marker_count, &map.name)
+                                } else {
+                                    map.name.clone()
+                                };
+
+                                html! {
+                                    <option value={i.to_string()} selected={i == *selected_map_index}>
+                                        { label }
+                                    </option>
+                                }
                             })
                         }
                     </select>
@@ -852,7 +867,7 @@ fn app() -> Html {
             }
             </div>
 
-            <div style={format!("width: {}px; height: {}px; padding: 1em;", window_height.max(*window_width) - (*canvas_size as f64), *window_height)}>
+            <div style={format!("width: {}px; height: {}px; min-width: 350px; flex-grow: 1; flex-shrink: 1; flex-basis: 300px; text-align: center;", window_height.max(*window_width) - (*canvas_size as f64), *window_height)}>
                 <div> 
                     <textarea
                         oninput={oninput}
@@ -860,16 +875,17 @@ fn app() -> Html {
                         autofocus=true
                         placeholder="Paste an Elm's string to view and modify it. This will change the selected zone automatically. Right click to place a new marker. Note that a player is approximately 100 units (1 metre) wide."
                         style="
-                            width: 100%;
+                            width: 80%;
                             border-radius: 1em;
                             height: 4em;
-                            padding-left: 0.5em;
-                            resize: none;"
+                            padding: 0.5em;
+                            resize: none;
+                            margin-top: 1em;"
                     />
                     <MarkerListPanel zone_markers={zone_marker_clone} current_markers={current_markers} on_update={update_markers} world_bounds={(map.scale_data.min_x, map.scale_data.max_x, map.scale_data.min_z, map.scale_data.max_z)} />
                 </div>
                 
-                <div style="position: absolute; bottom: 1em; right: 1em; display: flex; gap: 1em;">
+                <div style="position: fixed; bottom: 1em; right: 1em; display: flex; gap: 1em;">
                     <a
                         href={"https://discord.gg/FjJjXHjUQ4"}
                         target="_blank"

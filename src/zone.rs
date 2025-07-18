@@ -417,6 +417,110 @@ const MAP_METAS: &[MapMeta] = &[
         count: 3,
         map_scale_data: MapScaleData { scale_factor: 0.0000814427, min_x: 23863.0, max_x: 36142.0, min_z: 168844.0, max_z: 181122.0 }
     },
+    // MapMeta {
+    //     name: "Aetherian Archive",
+    //     map_id: 640,
+    //     zone_id: 638,
+    //     slug: "craglorn/aetherianarchiveend_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000814427, min_x: 23863.0, max_x: 36142.0, min_z: 168844.0, max_z: 181122.0 }
+    // },
+    // MapMeta {
+    //     name: "Aetherian Archive",
+    //     map_id: 641,
+    //     zone_id: 638,
+    //     slug: "craglorn/aetherianarchiveislandc_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000814427, min_x: 23863.0, max_x: 36142.0, min_z: 168844.0, max_z: 181122.0 }
+    // },
+    MapMeta {
+        name: "Aetherian Archive",
+        map_id: 642,
+        zone_id: 638,
+        slug: "craglorn/aetherianarchiveislanda_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000263922, min_x: 74309.0, max_x: 112199.0, min_z: 68450.0, max_z: 106340.0 }
+    },
+    // MapMeta {
+    //     name: "Aetherian Archive",
+    //     map_id: 644,
+    //     zone_id: 638,
+    //     slug: "craglorn/aetherianarchiveislandb_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000814427, min_x: 23863.0, max_x: 36142.0, min_z: 168844.0, max_z: 181122.0 }
+    // },
+    MapMeta {
+        name: "Aetherian Archive",
+        map_id: 645,
+        zone_id: 638,
+        slug: "craglorn/aetherianarchivemiddle_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000966184, min_x: 75389.0, max_x: 85739.0, min_z: 67669.0, max_z: 78019.0 }
+    },
+    MapMeta {
+        name: "Aetherian Archive",
+        map_id: 646,
+        zone_id: 638,
+        slug: "craglorn/aetherianarchivebottom_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000966184, min_x: 75389.0, max_x: 85739.0, min_z: 67669.0, max_z: 78019.0 }
+    },
+    MapMeta {
+        name: "Abanabi Cave",
+        map_id: 1286,
+        zone_id: 975,
+        slug: "vvardenfell/ui_map_hofabriccaves_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000160514, min_x: -3414.0, max_x: 58885.0, min_z: -13285.0, max_z: 49014.0 }
+    },
+    MapMeta {
+        name: "Transport Circuit",
+        map_id: 1291,
+        zone_id: 975,
+        slug: "vvardenfell/ui_map_hofabricloop_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000299401, min_x: 63671.0, max_x: 97071.0, min_z: 7428.0, max_z: 40828.0 }
+    },
+    MapMeta {
+        name: "Reprocessing Yard",
+        map_id: 1292,
+        zone_id: 975,
+        slug: "vvardenfell/ui_map_hofabrichall1_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000556439, min_x: 4299.0, max_x: 22271.0, min_z: 50099.0, max_z: 68071.0 }
+    },
+    // MapMeta {
+    //     name: "Reprocessing Yard",
+    //     map_id: 1294,
+    //     zone_id: 975,
+    //     slug: "vvardenfell/ui_map_hofabricext1_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000814427, min_x: 23863.0, max_x: 36142.0, min_z: 168844.0, max_z: 181122.0 }
+    // },
+    MapMeta {
+        name: "Reprocessing Yard",
+        map_id: 1298,
+        zone_id: 975,
+        slug: "vvardenfell/ui_map_hofabrichall2_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000814427, min_x: 23863.0, max_x: 36142.0, min_z: 168844.0, max_z: 181122.0 }
+    },
+    MapMeta {
+        name: "Core Assembly",
+        map_id: 1299,
+        zone_id: 975,
+        slug: "vvardenfell/ui_map_hofabricboss3_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000373732, min_x: 63285.0, max_x: 90042.0, min_z: 54685.0, max_z: 81442.0 }
+    },
+    MapMeta {
+        name: "Hel Ra Citadel",
+        map_id: 614,
+        zone_id: 636,
+        slug: "craglorn/helracitadel_base_",
+        count: 5,
+        map_scale_data: MapScaleData { scale_factor: 0.0000098844, min_x: 32030.0, max_x: 133200.0, min_z: 18939.0, max_z: 120109.0 }
+    },
 ];
 
 fn populate_map_data() -> Vec<Map> {
