@@ -7,10 +7,10 @@
 - [ ] Halls of Fabrication
 - [x] Asylum Sanctorium
 - [x] Cloudrest
-- [ ] Sunspire
+- [x] Sunspire
 - [ ] Kyne's Aegis
 - [ ] Rockgrove
-- [ ] Dreadsail Reef
+- [x] Dreadsail Reef
 - [ ] Sanity's Edge
 - [x] Lucent Citadel
 - [x] Ossein Cage

@@ -66,109 +66,109 @@ const MAP_METAS: &[MapMeta] = &[
         map_scale_data: MapScaleData { scale_factor: 0.0000174606, min_x: 118653.0, max_x: 196202.0, min_z: 51100.0, max_z: 128648.0 }
     },
     MapMeta {
-        name: "Beach",
+        name: "Dreadsail Beach",
         map_id: 2164,
         zone_id: 1344,
         count: 3,
         slug: "systres/dsr_beach_01_",
         map_scale_data: MapScaleData { scale_factor: 0.0000123963, min_x: 8461.0, max_x: 89130.0, min_z: 120141.0, max_z: 200811.0 }
     },
-    // MapMeta {
-    //     name: "(Twins) Bloodsport Arena",
-    //     map_id: 2165,
-    //     zone_id: 1344,
-    //     count: 3,
-    //     slug: "systres/dsr_boss1_map_",
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
-    // },
-    // MapMeta {
-    //     name: "Reef Warren",
-    //     map_id: 2166,
-    //     zone_id: 1344,
-    //     count: 3,
-    //     slug: "systres/dsr_doors_map_",
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
-    // },
-    // MapMeta {
-    //     name: "(Bird) Tempest Heights",
-    //     map_id: 2179,
-    //     zone_id: 1344,
-    //     count: 3,
-    //     slug: "systres/dsr_e_map_",
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
-    // },
-    // MapMeta {
-    //     name: "(Crab) Reef Caverns",
-    //     map_id: 2179,
-    //     zone_id: 1344,
-    //     count: 3,
-    //     slug: "systres/dsr_w_map_",
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
-    // },
-    // MapMeta {
-    //     name: "(Reef Guardian) Coral Cavern",
-    //     map_id: 2183,
-    //     zone_id: 1344,
-    //     count: 3,
-    //     slug: "systres/dsr_b2_map_",
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
-    // },
-    // MapMeta {
-    //     name: "Coral Cavern Whorlpools",
-    //     map_id: 2184,
-    //     zone_id: 1344,
-    //     count: 3,
-    //     slug: "systres/dsr_b2under_map_",
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
-    // },
-    // MapMeta {
-    //     name: "Fleet Queen's Parlors",
-    //     map_id: 2181,
-    //     zone_id: 1344,
-    //     count: 3,
-    //     slug: "systres/dsr_v_map_", -- game straight up lied to me. it was actually in elsweyr folder ???
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
-    // },
-    // MapMeta {
-    //     name: "(Taleria) Coral Caldera",
-    //     map_id: 2182,
-    //     zone_id: 1344,
-    //     count: 3,
-    //     slug: "systres/dsr_b3_map_",
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () }
-    // },
+    MapMeta {
+        name: "(Twins) Bloodsport Arena",
+        map_id: 2165,
+        zone_id: 1344,
+        count: 3,
+        slug: "systres/dsr_boss1_map_",
+        map_scale_data: MapScaleData { scale_factor: 0.0000389544, min_x: 57121.0, max_x: 82792.0, min_z: 71757.0, max_z: 97428.0 }
+    },
+    MapMeta {
+        name: "Reef Warren",
+        map_id: 2166,
+        zone_id: 1344,
+        count: 3,
+        slug: "systres/dsr_doors_map_",
+        map_scale_data: MapScaleData { scale_factor: 0.0000262208, min_x: 93316.0, max_x: 131453.0, min_z: 83429.0, max_z: 121567.0 }
+    },
+    MapMeta {
+        name: "(Bird) Tempest Heights",
+        map_id: 2179,
+        zone_id: 1344,
+        count: 3,
+        slug: "systres/dsr_e_map_",
+        map_scale_data: MapScaleData { scale_factor: 0.0000111884, min_x: 110272.0, max_x: 199650.0, min_z: 110266.0, max_z: 199645.0 }
+    },
+    MapMeta {
+        name: "(Crab) Reef Caverns",
+        map_id: 2180,
+        zone_id: 1344,
+        count: 3,
+        slug: "systres/dsr_w_map_",
+        map_scale_data: MapScaleData { scale_factor: 0.0000144686, min_x: 4439.0, max_x: 73554.0, min_z: -4129.0, max_z: 64986.0 }
+    },
+    MapMeta {
+        name: "(Reef Guardian) Coral Cavern",
+        map_id: 2181,
+        zone_id: 1344,
+        count: 3,
+        slug: "systres/dsr_b2_map_",
+        map_scale_data: MapScaleData { scale_factor: 0.0000372149, min_x: 159011.0, max_x: 185882.0, min_z: 69115.0, max_z: 95986.0 }
+    },
+    MapMeta {
+        name: "Coral Cavern Whorlpools",
+        map_id: 2182,
+        zone_id: 1344,
+        count: 3,
+        slug: "systres/dsr_b2under_map_",
+        map_scale_data: MapScaleData { scale_factor: 0.0000372149, min_x: 159051.0, max_x: 185922.0, min_z: 69115.0, max_z: 95986.0 }
+    },
+    MapMeta {
+        name: "Fleet Queen's Parlors",
+        map_id: 2183,
+        zone_id: 1344,
+        count: 3,
+        slug: "systres/dsr_v_map_", // game straight up lied to me. it was actually in elsweyr folder ???
+        map_scale_data: MapScaleData { scale_factor: 0.0000177090, min_x: 89102.0, max_x: 145570.0, min_z: 9548.0, max_z: 66016.0 }
+    },
+    MapMeta {
+        name: "(Taleria) Coral Caldera",
+        map_id: 2184,
+        zone_id: 1344,
+        count: 3,
+        slug: "systres/dsr_b3_map_",
+        map_scale_data: MapScaleData { scale_factor: 0.0000380036, min_x: 156781.0, max_x: 183094.0, min_z: 14641.0, max_z: 40954.0 }
+    },
     MapMeta {
         name: "Kyne's Aegis",
         map_id: 1805,
         zone_id: 1196,
         slug: "skyrim/kynesaegismap001_",
         count: 3,
-        map_scale_data: MapScaleData { scale_factor: 0.0000142439, min_x: -686955.0, max_x: -616749.0, min_z: 1555830.0, max_z: 1626035.0 },
+        map_scale_data: MapScaleData { scale_factor: 0.0000084731, min_x: 44399.0, max_x: 162419.0, min_z: 35279.0, max_z: 153299.0 },
     },
-    // MapMeta {
-    //     name: "(Floor 1) Ruins of Kyne's Aegis",
-    //     map_id: 1806,
-    //     zone_id: 1196,
-    //     slug: "skyrim/kynesaegisboss3floor001_",
-    //     count: 3,
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () },
-    // },
-    // MapMeta {
-    //     name: "(Floor 2) Kyne's Aegis's Hidden Barrow",
-    //     map_id: 1807,
-    //     zone_id: 1196,
-    //     slug: "skyrim/kynesaegisboss3floor002_",
-    //     count: 3,
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () },
-    // },
-    // MapMeta {
-    //     name: "(Floor 3) Kyne's Aegis's Ritual Vault",
-    //     map_id: 1808,
-    //     zone_id: 1196,
-    //     slug: "skyrim/kynesaegisboss3floor003_",
-    //     count: 3,
-    //     map_scale_data: MapScaleData { scale_factor: (), min_x: (), max_x: (), min_z: (), max_z: () },
-    // },
+    MapMeta {
+        name: "(Falgravn) Ruins",
+        map_id: 1806,
+        zone_id: 1196,
+        slug: "skyrim/kynesaegisboss3floor001_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000980392, min_x: 73919.0, max_x: 84119.0, min_z: 51039.0, max_z: 61259.0 },
+    },
+    MapMeta {
+        name: "(Floor 2) Hidden Barrow",
+        map_id: 1807,
+        zone_id: 1196,
+        slug: "skyrim/kynesaegisboss3floor002_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000980392, min_x: 73919.0, max_x: 84119.0, min_z: 51039.0, max_z: 61259.0 }, // WRONG
+    },
+    MapMeta {
+        name: "(Floor 3) Ritual Vault",
+        map_id: 1808,
+        zone_id: 1196,
+        slug: "skyrim/kynesaegisboss3floor003_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000783699, min_x: 72660.0, max_x: 85420.0, min_z: 49719.0, max_z: 62519.0 },
+    },
     MapMeta {
         name: "Lucent Citadel",
         map_id: 2552,
@@ -178,7 +178,7 @@ const MAP_METAS: &[MapMeta] = &[
         map_scale_data: MapScaleData { scale_factor: 0.0000092868, min_x: 64733.0, max_x: 172413.0, min_z: 78056.0, max_z: 185736.0 }
     },
     MapMeta {
-        name: "Trash & Shapers",
+        name: "(Shapers) The Marred Path",
         map_id: 2687,
         zone_id: 1548,
         slug: "coldharbour/osscage_section1map002_",
@@ -186,7 +186,7 @@ const MAP_METAS: &[MapMeta] = &[
         map_scale_data: MapScaleData { scale_factor: 0.0000115969, min_x: 144318.0, max_x: 230548.0, min_z: 29010.0, max_z: 115240.0 }
     },
     MapMeta {
-        name: "Trash & Twins",
+        name: "(Twins) Quarreler's Quarry",
         map_id: 2688,
         zone_id: 1548,
         slug: "coldharbour/osscage_section2map003_",
@@ -194,7 +194,7 @@ const MAP_METAS: &[MapMeta] = &[
         map_scale_data: MapScaleData { scale_factor: 0.0000157973, min_x: 57954.0, max_x: 121256.0, min_z: 96323.0, max_z: 159625.0 }
     },
     MapMeta {
-        name: "Trash",
+        name: "The Wormgut",
         map_id: 2689,
         zone_id: 1548,
         slug: "coldharbour/osscage_section3map004_",
@@ -202,7 +202,7 @@ const MAP_METAS: &[MapMeta] = &[
         map_scale_data: MapScaleData { scale_factor: 0.0000125188, min_x: 141042.0, max_x: 220922.0, min_z: 138302.0, max_z: 218181.0 }
     },
     MapMeta {
-        name: "Kazpian",
+        name: "(Kazpian) The Mangled Court",
         map_id: 2690,
         zone_id: 1548,
         slug: "coldharbour/osscage_boss3map005_",
@@ -210,7 +210,7 @@ const MAP_METAS: &[MapMeta] = &[
         map_scale_data: MapScaleData { scale_factor: 0.0000249333, min_x: 30815.0, max_x: 70922.0, min_z: 179812.0, max_z: 219919.0 }
     },
     MapMeta {
-        name: "Secret Boss 1",
+        name: "Inscrutable Lichyard",
         map_id: 2691,
         zone_id: 1548,
         slug: "coldharbour/osscage_secret1map006_",
@@ -218,7 +218,7 @@ const MAP_METAS: &[MapMeta] = &[
         map_scale_data: MapScaleData { scale_factor: 0.0000396817, min_x: 63168.0, max_x: 88368.0, min_z: 12901.0, max_z: 38101.0 }
     },
     MapMeta {
-        name: "Secret Boss 2",
+        name: "Gaol of Transition",
         map_id: 2692,
         zone_id: 1548,
         slug: "coldharbour/osscage_secret2map007_",
@@ -226,7 +226,7 @@ const MAP_METAS: &[MapMeta] = &[
         map_scale_data: MapScaleData { scale_factor: 0.0000485714, min_x: 64572.0, max_x: 85160.0, min_z: 64639.0, max_z: 85227.0 }
     },
     MapMeta {
-        name: "Secret Boss 3",
+        name: "Sitient Lair",
         map_id: 2693,
         zone_id: 1548,
         slug: "coldharbour/osscage_secret3map008_",
@@ -328,6 +328,94 @@ const MAP_METAS: &[MapMeta] = &[
         slug: "reapersmarch/mawlorkajsevenriddles_base_",
         count: 3,
         map_scale_data: MapScaleData { scale_factor: 0.0000224066, min_x: 23734.0, max_x: 68364.0, min_z: 167379.0, max_z: 212009.0 }
+    },
+    MapMeta {
+        name: "Sanctum Ophidia",
+        map_id: 704,
+        zone_id: 639,
+        slug: "craglorn/trl_so_map01_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000132988, min_x: 72754.0, max_x: 147949.0, min_z: 126075.0, max_z: 201270.0 }
+    },
+    MapMeta {
+        name: "Sanctum Ophidia",
+        map_id: 705,
+        zone_id: 639,
+        slug: "craglorn/trl_so_map02_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000113779, min_x: 66794.0, max_x: 154684.0, min_z: 103904.0, max_z: 191794.0 }
+    },
+    // MapMeta {
+    //     name: "Sanctum Ophidia",
+    //     map_id: 706,
+    //     zone_id: 639,
+    //     slug: "craglorn/trl_so_map03_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000029280, min_x: 23734.0, max_x: 68364.0, min_z: 167379.0, max_z: 212009.0 }
+    // },
+    // MapMeta {
+    //     name: "Sanctum Ophidia",
+    //     map_id: 707,
+    //     zone_id: 639,
+    //     slug: "craglorn/trl_so_map04_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000224066, min_x: 23734.0, max_x: 68364.0, min_z: 167379.0, max_z: 212009.0 }
+    // },
+    MapMeta {
+        name: "Sunspire Temple Grounds",
+        map_id: 1649,
+        zone_id: 1121,
+        slug: "elsweyr/sunspireoverworld_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000100348, min_x: 54438.0, max_x: 154091.0, min_z: 47127.0, max_z: 146780.0 }
+    },
+    // MapMeta {
+    //     name: "Sunspire Temple Vestibule",
+    //     map_id: 1650,
+    //     zone_id: 1121,
+    //     slug: "elsweyr/sunspirehall001_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000435114, min_x: 96878.0, max_x: 119861.0, min_z: 41634.0, max_z: 64617.0 }
+    // },
+    MapMeta {
+        name: "Chancel of Alkosh Vestibule",
+        map_id: 1651,
+        zone_id: 1121,
+        slug: "elsweyr/sunspirehall002_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000712216, min_x: 98753.0, max_x: 112794.0, min_z: 68647.0, max_z: 82688.0 }
+    },
+    // MapMeta {
+    //     name: "(Fire) Shrine of Jode Vestibule",
+    //     map_id: 1652,
+    //     zone_id: 1121,
+    //     slug: "elsweyr/sunspirehall003_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000522478, min_x: 85200.0, max_x: 104339.0, min_z: 71046.0, max_z: 90186.0 }
+    // },
+    // MapMeta {
+    //     name: "(Ice) Shrine of Jode Vestibule",
+    //     map_id: 1653,
+    //     zone_id: 1121,
+    //     slug: "elsweyr/sunspirehall004_base_",
+    //     count: 3,
+    //     map_scale_data: MapScaleData { scale_factor: 0.0000443433, min_x: 104695.0, max_x: 127247.0, min_z: 72921.0, max_z: 95472.0 }
+    // },
+    MapMeta {
+        name: "(Ice) Shrine of Jone",
+        map_id: 1655,
+        zone_id: 1121,
+        slug: "elsweyr/sunspireroom001_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000814427, min_x: 168937.0, max_x: 181216.0, min_z: 163876.0, max_z: 176155.0 }
+    },
+    MapMeta {
+        name: "(Fire) Shrine of Jone",
+        map_id: 1657,
+        zone_id: 1121,
+        slug: "elsweyr/sunspireroom002_base_",
+        count: 3,
+        map_scale_data: MapScaleData { scale_factor: 0.0000814427, min_x: 23863.0, max_x: 36142.0, min_z: 168844.0, max_z: 181122.0 }
     },
 ];
 

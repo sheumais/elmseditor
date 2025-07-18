@@ -1,5 +1,5 @@
 use std::collections::{HashMap, HashSet};
-use stylist::css;
+use stylist::{css, Style};
 use wasm_bindgen::{prelude::Closure, JsCast};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, HtmlImageElement, HtmlInputElement, MouseEvent, WheelEvent};
 use yew::prelude::*;
@@ -217,6 +217,16 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
         });
     }
 
+    let delete_style = Style::new(css!(r#"
+        color: #fff;
+        transition: color 0.3s, scale 0.3s;
+        cursor: pointer;
+        &:hover {
+            color: #ff0000;
+            transform: scale(1.5);
+        }
+    "#)).expect("Couldn't create delete_style");
+
     let zone_template = props.zone_markers.clone();
     let on_update_cb  = props.on_update.clone();
     let icon_picker_for = use_state(|| None::<usize>);
@@ -300,7 +310,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
     };
 
     html! {
-        <div style="display:flex;flex-direction:column;max-height:85vh;margin-bottom:5vh;">
+        <div style="display:flex;flex-direction:column;max-height:85vh;margin-bottom:5vh;text-shadow: 2px 1.5px black;">
             <h1 style="text-align:center;">{"Markers"}</h1>
             <div style="overflow-y:auto;">
                 <ul style="padding:0;margin:0;list-style:none;">
@@ -356,6 +366,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                             <input
                                 type="checkbox"
                                 checked={marker.active}
+                                style="cursor:pointer;"
                                 onchange={Callback::from(move |e: Event| {
                                     let inp: HtmlInputElement = e.target_unchecked_into();
                                     tog.emit((i, inp.checked()));
@@ -364,6 +375,8 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                         </label>
 
                         <Icon
+                            class={delete_style.clone()}
+                            style="cursor:pointer;"
                             width={"1em"}
                             height={"1em"}
                             icon_id={IconId::BootstrapXLg}
@@ -442,6 +455,7 @@ fn app() -> Html {
             let sel: HtmlInputElement = e.target_unchecked_into();
             if let Ok(idx) = sel.value().parse::<usize>() {
                 selected_map_index.set(idx);
+                // web_sys::console::log_1(&format!("2Setting map index to '{}'", idx).into());
                 zoom.set(1.0);
                 pan.set( (0.0, 0.0) );
             }
@@ -450,12 +464,15 @@ fn app() -> Html {
 
     let on_zone_change = {
         let selected_zone_index = selected_zone_index.clone();
+        let selected_map_index = selected_map_index.clone();
         let zoom = zoom.clone();
         let pan = pan.clone();
         Callback::from(move |e: Event| {
             let sel: HtmlInputElement = e.target_unchecked_into();
             if let Ok(idx) = sel.value().parse::<usize>() {
                 selected_zone_index.set(idx);
+                selected_map_index.set(0);
+                // web_sys::console::log_1(&format!("2Setting zone index to '{}'", idx).into());
                 zoom.set(1.0);
                 pan.set( (0.0, 0.0) );
             }
@@ -639,14 +656,17 @@ fn app() -> Html {
 
                 if !parsed_markers.is_empty() {
                     let current_zone = zone_ids[*selected_zone_index];
-                    let mut keys = zones.clone();
-                    keys.sort();
+                    // web_sys::console::log_1(&format!("current_zone id: {}, selected zone index: {}", current_zone, *selected_zone_index).into());
+                    let keys = zones.clone();
                     let first_zone = keys[0];
+                    // web_sys::console::log_1(&format!("first_zone: {}", first_zone).into());
                     if first_zone != current_zone {
                         if let Some(idx) = zone_ids.iter().position(|&z| z == first_zone) {
                             // web_sys::console::log_1(&format!("Switching to zone {} at index {}", first_zone, idx).into());
                             selected_zone_index.set(idx);
+                            // web_sys::console::log_1(&format!("1Setting zone index to '{}'", idx).into());
                             selected_map_index.set(0);
+                            // web_sys::console::log_1(&format!("1Setting map index to '{}'", 0).into());
                             zoom.set(1.0);
                             pan.set((0f64, 0f64));
                             last.set((0f64, 0f64));
@@ -665,7 +685,7 @@ fn app() -> Html {
         let selected_zone_index = selected_zone_index.clone();
         let zone_ids = zone_ids.clone();
         Callback::from(move |new_markers: Vec<MarkerFlat>| {
-            let mut new_map = (*parsed_markers).clone();
+            let mut new_map = HashMap::new();
             let zone_id = zone_ids[*selected_zone_index];
             new_map.insert(zone_id, new_markers.clone());
             let mut all_zones: Vec<u16> = new_map.keys().cloned().collect();
@@ -764,9 +784,9 @@ fn app() -> Html {
         color: #fff;
     "#);
 
-    let zone = zones.get(*selected_zone_index).unwrap().clone();
+    let zone = zones.get(*selected_zone_index).unwrap_or_else(|| {selected_zone_index.set(0); zones.get(0).unwrap()}).clone();
     // web_sys::console::log_1(&format!("zone_index: {}, zone: {:?}", *selected_zone_index, zone).into());
-    let map = zone.maps.get(*selected_map_index).unwrap().clone();
+    let map = zone.maps.get(*selected_map_index).unwrap_or_else(|| {selected_map_index.set(0); zone.maps.get(0).unwrap()}).clone();
 
     let canvas_width = *canvas_size;
     let canvas_height = *canvas_size;
@@ -806,7 +826,6 @@ fn app() -> Html {
                 </div>
             </div>
 
-            // /1086//464850,42212,127978,38//1086//465000,42212,127978,38/
             <div style="position: absolute; top: 1em; left: 1em;">
             if zone_marker_clone.len() > 0 {
                 if zone.maps.len() > 1 {
@@ -839,7 +858,7 @@ fn app() -> Html {
                         oninput={oninput}
                         value={(*elms_input).clone()}
                         autofocus=true
-                        placeholder="Paste an Elm's string to view and modify it. This will change the selected zone automatically. Right click to place a new marker. Note that a player is approximately 100 units wide."
+                        placeholder="Paste an Elm's string to view and modify it. This will change the selected zone automatically. Right click to place a new marker. Note that a player is approximately 100 units (1 metre) wide."
                         style="
                             width: 100%;
                             border-radius: 1em;
