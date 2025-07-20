@@ -99,7 +99,7 @@ impl From<u16> for MarkerIcon {
         match n {
             1..=12 => MarkerIcon::Num(n as u8),
             13 => MarkerIcon::Arrow,
-            14 => MarkerIcon::MarkerLightBlue,
+            14 => MarkerIcon::MarkerLightBlue, // this is very definitely GREEN but whatever 
             15 => MarkerIcon::SquareBlue,
             16 => MarkerIcon::SquareGreen,
             17 => MarkerIcon::SquareOrange,

@@ -1,16 +1,28 @@
-## Supported Trials
+## Features & Roadmap
+- [x] [Elm's Markers](https://www.esoui.com/downloads/info3395-ElmsMarkers.html) string input
+- [x] Zoom/Pan
+- [x] Modify marker position
+- [x] Change marker icon
+- [x] Right click to place new marker
+- [x] Sub-zone auto-mapping
+- [ ] Height-based auto-mapping (Falgravn floors)
+- [ ] [Akamatsu format](https://esoui.com/downloads/info3684-Marker.html) support 
+- [ ] [Breadcrumbs](https://www.esoui.com/downloads/info3996-Breadcrumbs.html) support
+- [ ] More zones (Dungeons et cetera)?
 
-- [ ] Hel Ra Citadel
-- [ ] Aetherian Archive
-- [ ] Sanctum Ophidia
+## Fully Supported Trials
+
+- [x] Hel Ra Citadel
+- [x] Aetherian Archive
+- [x] Sanctum Ophidia
 - [x] Maw of Lorkhaj
-- [ ] Halls of Fabrication
+- [x] Halls of Fabrication
 - [x] Asylum Sanctorium
 - [x] Cloudrest
 - [x] Sunspire
 - [ ] Kyne's Aegis
-- [ ] Rockgrove
+- [x] Rockgrove
 - [x] Dreadsail Reef
-- [ ] Sanity's Edge
+- [x] Sanity's Edge
 - [x] Lucent Citadel
 - [x] Ossein Cage

@@ -15,26 +15,54 @@ fn parse_elms_string(elms_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<Ma
     let re = Regex::new(r"/(?P<zone>\d+)//(?P<x>\d+),(?P<y>\d+),(?P<z>\d+),(?P<icon>\d+)/").unwrap();
     let mut result: HashMap<u16, Vec<MarkerFlat>> = HashMap::new();
     let mut seen: HashMap<u16, HashSet<MarkerFlat>> = HashMap::new();
+    let mut id_counter = 0;
 
-    let mut i = 0;
     for caps in re.captures_iter(elms_string) {
         let zone_id: u16 = caps["zone"].parse().unwrap();
-        let x = caps["x"].parse().unwrap();
-        let y = caps["y"].parse().unwrap();
-        let z = caps["z"].parse().unwrap();
+        let x: i32 = caps["x"].parse().unwrap();
+        let y: i32 = caps["y"].parse().unwrap();
+        let z: i32 = caps["z"].parse().unwrap();
         let icon_number: u16 = caps["icon"].parse().unwrap();
         let icon_enum = MarkerIcon::try_from(icon_number).unwrap_or(MarkerIcon::Unknown);
         let icon = icon_enum.into();
-        if let Some(zone) = zones.iter().find(|z| z.id == zone_id) {
-            for map in &zone.maps {
-                if x >= map.scale_data.min_x as i32 && x <= map.scale_data.max_x as i32
-                && z >= map.scale_data.min_z as i32 && z <= map.scale_data.max_z as i32 {
-                    let marker = MarkerFlat { position: Position3D { x, y, z }, icon, size: 1, active: true, id: i, format: MarkerFormat::Bitrock, map_id: map.map_id};
-                    let set = seen.entry(zone_id).or_default();
-                    if set.insert(marker.clone()) {
-                        result.entry(zone_id).or_default().push(marker);
-                        i += 1;
-                    }
+
+        if let Some(zone_obj) = zones.iter().find(|zone| zone.id == zone_id) {
+            let matching_maps: Vec<&Map> = zone_obj.maps.iter().filter(|map| {
+                x >= map.scale_data.min_x as i32 && x <= map.scale_data.max_x as i32
+                && z >= map.scale_data.min_z as i32 && z <= map.scale_data.max_z as i32
+            }).collect();
+
+            if let Some(best_map) = matching_maps.into_iter().min_by_key(|map| {
+                    let width  = (map.scale_data.max_x - map.scale_data.min_x) as u32;
+                    let depth  = (map.scale_data.max_z - map.scale_data.min_z) as u32;
+                    let area   = width.saturating_mul(depth);
+
+                    let (unknown_flag, y_offset) = match map.scale_data.y {
+                        Some(by) => {
+                            let dy = (y as f32 - by).abs() as u32;
+                            (0u32, dy)
+                        }
+                        None => {
+                            (1u32, u32::MAX)
+                        }
+                    };
+
+                    (unknown_flag, y_offset, area)
+                }) {
+                let marker = MarkerFlat {
+                    position: Position3D { x, y, z },
+                    icon,
+                    size: 1,
+                    active: true,
+                    id: id_counter,
+                    format: MarkerFormat::Bitrock,
+                    map_id: best_map.map_id,
+                };
+
+                let entry_set = seen.entry(zone_id).or_default();
+                if entry_set.insert(marker.clone()) {
+                    result.entry(zone_id).or_default().push(marker);
+                    id_counter += 1;
                 }
             }
         }
@@ -55,6 +83,7 @@ pub struct CanvasMapProps {
     pub pan: (f64, f64),
     pub width: u32,
     pub height: u32,
+    pub map_index: usize,
 }
 
 #[function_component(CanvasMap)]
@@ -66,6 +95,7 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
     let pan = props.pan;
     let canvas_width = props.width;
     let canvas_height = props.height;
+    let map_index = props.map_index;
     // web_sys::console::log_1(&format!("canvas map map: {:?}", map).into());
 
     let tile_images = {
@@ -82,8 +112,8 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
     {
         let canvas_ref = canvas_ref.clone();
         let tile_images = tile_images.clone();
-        use_effect_with((tile_images.clone(),markers.clone(),zoom,pan,canvas_width,canvas_height,),
-            move |(tile_images, markers, zoom, pan, canvas_width, canvas_height)| {
+        use_effect_with((tile_images.clone(),markers.clone(),zoom,pan,canvas_width,canvas_height,map_index),
+            move |(tile_images, markers, zoom, pan, canvas_width, canvas_height, _)| {
             
             let canvas = canvas_ref.cast::<HtmlCanvasElement>().unwrap();
             let ctx = canvas
@@ -825,6 +855,7 @@ fn app() -> Html {
                     pan={pan}
                     width={canvas_width}
                     height={canvas_height}
+                    map_index={*selected_map_index.clone()}
                 />
             </div>
 
@@ -867,7 +898,7 @@ fn app() -> Html {
             }
             </div>
 
-            <div style={format!("width: {}px; height: {}px; min-width: 350px; flex-grow: 1; flex-shrink: 1; flex-basis: 300px; text-align: center;", window_height.max(*window_width) - (*canvas_size as f64), *window_height)}>
+            <div style={format!("width: {}px; height: {}px; min-width: 300px; flex-grow: 1; flex-shrink: 1; flex-basis: 300px; text-align: center;", window_height.max(*window_width) - (*canvas_size as f64), *window_height)}>
                 <div> 
                     <textarea
                         oninput={oninput}
