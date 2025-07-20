@@ -838,16 +838,17 @@ fn app() -> Html {
                 {onmouseup}
                 {onmousemove}
                 {oncontextmenu}
-                style="
+                style={format!("
                     display: flex;
                     flex-flow: column nowrap;
                     box-sizing: border-box;
-                    flex-grow: 1;
                     flex-shrink: 1;
                     flex-basis: 300px;
                     justify-content: center;
                     text-align: center;
-                ">
+                    width: {}px;
+                    height: {}px;
+                ", canvas_width, canvas_height)}>
                 <CanvasMap
                     map={map.clone()}
                     markers={current_markers.clone()}
