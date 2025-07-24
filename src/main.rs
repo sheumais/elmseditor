@@ -64,6 +64,21 @@ fn parse_elms_string(elms_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<Ma
                     result.entry(zone_id).or_default().push(marker);
                     id_counter += 1;
                 }
+            } else {
+                let marker = MarkerFlat {
+                    position: Position3D { x, y, z },
+                    icon,
+                    size: 1,
+                    active: true,
+                    id: id_counter,
+                    format: MarkerFormat::Bitrock,
+                    map_id: 0,
+                };
+                let entry_set = seen.entry(zone_id).or_default();
+                if entry_set.insert(marker.clone()) {
+                    result.entry(zone_id).or_default().push(marker);
+                    id_counter += 1;
+                }
             }
         }
     }
@@ -360,38 +375,43 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                         { for ["x","y","z"].iter().map(move |&axis| {
                             let up = upd.clone();
                             let val = match axis {
-                                "x" => marker.position.x.to_string(),
-                                "y" => marker.position.y.to_string(),
-                                "z" => marker.position.z.to_string(),
-                                _ => String::new(),
+                                "x" => marker.position.x,
+                                "y" => marker.position.y,
+                                "z" => marker.position.z,
+                                _ => 0,
                             };
+
+                            let (min, max) = match axis {
+                                "x" => (props.world_bounds.0 as i32, props.world_bounds.1 as i32),
+                                "z" => (props.world_bounds.2 as i32, props.world_bounds.3 as i32),
+                                _ => (-1e6 as i32, 1e6 as i32),
+                            };
+
+                            let val_str = val.to_string();
+                            let is_out_of_bounds = val < min || val > max || val == 0;
+
                             html! {
                             <label>
                                 {format!("{}: ", axis.to_uppercase())}
                                 <input
                                     type="number"
-                                    min={match axis {
-                                        "x" => props.world_bounds.0.to_string(),
-                                        "z" => props.world_bounds.2.to_string(),
-                                        _ => f32::MIN.to_string(),
-                                    }}
-                                    max={match axis {
-                                        "x" => props.world_bounds.1.to_string(),
-                                        "z" => props.world_bounds.3.to_string(),
-                                        _ => f32::MAX.to_string(),
-                                    }}
-                                    step={"25"}
-                                    value={val.clone()}
+                                    min={min.to_string()}
+                                    max={max.to_string()}
+                                    step="25"
+                                    title=""
+                                    value={val_str.clone()}
                                     oninput={Callback::from(move |e: InputEvent| {
                                         let inp: HtmlInputElement = e.target_unchecked_into();
                                         up.emit((i, axis.to_string(), inp.value()));
                                     })}
-                                    style="width:6em;"
+                                    style={format!(
+                                        "width:6em;{}",
+                                        if is_out_of_bounds { " outline: 1px solid red;" } else { "" }
+                                    )}
                                 />
                             </label>
                             }
                         }) }
-
                         <label>
                             <input
                                 type="checkbox"
@@ -626,6 +646,7 @@ fn app() -> Html {
                     let nx = world_x / size;
                     let nz = world_z / size;
                     let pos_x = scale.min_x as f64 + nx * (scale.max_x - scale.min_x) as f64;
+                    let pos_y = scale.y.unwrap_or(0.0);
                     let pos_z = scale.min_z as f64 + nz * (scale.max_z - scale.min_z) as f64;
 
                     let marker = MarkerFlat {
@@ -633,7 +654,7 @@ fn app() -> Html {
                         icon: "squares/marker_lightblue.png".into(),
                         position: Position3D {
                             x: pos_x.round() as i32,
-                            y: 0,
+                            y: pos_y.round() as i32,
                             z: pos_z.round() as i32,
                         },
                         size: 1,

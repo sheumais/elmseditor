@@ -219,7 +219,7 @@ const MAP_METAS: &[MapMeta] = &[
         zone_id: 1000,
         slug: "clockwork/ui_map_asylumsanctorum001_base_",
         count: 3,
-        map_scale_data: MapScaleData { y: None, scale_factor: 0.0000210217, min_x: 63360.0, max_x: 110930.0, min_z: 75410.0, max_z: 122980.0 }
+        map_scale_data: MapScaleData { y: Some(61450.0), scale_factor: 0.0000210217, min_x: 63360.0, max_x: 110930.0, min_z: 75410.0, max_z: 122980.0 }
     },
     MapMeta {
         name: "Upper Level",
@@ -227,7 +227,7 @@ const MAP_METAS: &[MapMeta] = &[
         zone_id: 1000,
         slug: "clockwork/ui_map_asylumsanctorum002_base_",
         count: 3,
-        map_scale_data: MapScaleData { y: None, scale_factor: 0.0000312500, min_x: 84629.0, max_x: 116629.0, min_z: 83199.0, max_z: 115199.0 }
+        map_scale_data: MapScaleData { y: Some(65850.0), scale_factor: 0.0000312500, min_x: 84629.0, max_x: 116629.0, min_z: 83199.0, max_z: 115199.0 }
     },
 
     // Cloudrest
@@ -349,7 +349,7 @@ const MAP_METAS: &[MapMeta] = &[
         zone_id: 1344,
         count: 3,
         slug: "systres/dsr_boss1_map_",
-        map_scale_data: MapScaleData { y: None, scale_factor: 0.0000389544, min_x: 57121.0, max_x: 82792.0, min_z: 71757.0, max_z: 97428.0 }
+        map_scale_data: MapScaleData { y: Some(36125.0), scale_factor: 0.0000389544, min_x: 57121.0, max_x: 82792.0, min_z: 71757.0, max_z: 97428.0 }
     },
     MapMeta {
         name: "Reef Warren",
@@ -381,7 +381,7 @@ const MAP_METAS: &[MapMeta] = &[
         zone_id: 1344,
         count: 3,
         slug: "systres/dsr_b2_map_",
-        map_scale_data: MapScaleData { y: None, scale_factor: 0.0000372149, min_x: 159011.0, max_x: 185882.0, min_z: 69115.0, max_z: 95986.0 }
+        map_scale_data: MapScaleData { y: Some(39803.0), scale_factor: 0.0000372149, min_x: 159011.0, max_x: 185882.0, min_z: 69115.0, max_z: 95986.0 }
     },
     MapMeta {
         name: "Coral Cavern Whorlpools",
@@ -405,7 +405,7 @@ const MAP_METAS: &[MapMeta] = &[
         zone_id: 1344,
         count: 3,
         slug: "systres/dsr_b3_map_",
-        map_scale_data: MapScaleData { y: None, scale_factor: 0.0000380036, min_x: 156781.0, max_x: 183094.0, min_z: 14641.0, max_z: 40954.0 }
+        map_scale_data: MapScaleData { y: Some(36114.0), scale_factor: 0.0000380036, min_x: 156781.0, max_x: 183094.0, min_z: 14641.0, max_z: 40954.0 }
     },
 
     // Sanity's Edge
@@ -423,7 +423,7 @@ const MAP_METAS: &[MapMeta] = &[
         zone_id: 1427,
         slug: "telvanni/sanitysedgeboss2_map_",
         count: 3,
-        map_scale_data: MapScaleData { y: None, scale_factor: 0.0000340276, min_x: 165357.0, max_x: 194745.0, min_z: 216826.0, max_z: 246214.0 }
+        map_scale_data: MapScaleData { y: Some(40325.0), scale_factor: 0.0000340276, min_x: 165357.0, max_x: 194745.0, min_z: 216826.0, max_z: 246214.0 }
     },
     MapMeta {
         name: "Yaseyla's Execution Room",
@@ -491,7 +491,7 @@ const MAP_METAS: &[MapMeta] = &[
         zone_id: 1548,
         slug: "coldharbour/osscage_boss3map005_",
         count: 4,
-        map_scale_data: MapScaleData { y: None, scale_factor: 0.0000249333, min_x: 30815.0, max_x: 70922.0, min_z: 179812.0, max_z: 219919.0 }
+        map_scale_data: MapScaleData { y: Some(35551.0), scale_factor: 0.0000249333, min_x: 30815.0, max_x: 70922.0, min_z: 179812.0, max_z: 219919.0 }
     },
     MapMeta {
         name: "Inscrutable Lichyard",
