@@ -283,30 +283,30 @@ const MAP_METAS: &[MapMeta] = &[
         count: 3,
         map_scale_data: MapScaleData { y: None, scale_factor: 0.0000084731, min_x: 44399.0, max_x: 162419.0, min_z: 35279.0, max_z: 153299.0 },
     },
-    // MapMeta {
-    //     name: "(Falgravn) Ruins",
-    //     map_id: 1806,
-    //     zone_id: 1196,
-    //     slug: "skyrim/kynesaegisboss3floor001_",
-    //     count: 3,
-    //     map_scale_data: MapScaleData { y: Some(21750.0), scale_factor: 0.0000980392, min_x: 73919.0, max_x: 84119.0, min_z: 51039.0, max_z: 61259.0 },
-    // },
-    // MapMeta {
-    //     name: "(Floor 2) Hidden Barrow",
-    //     map_id: 1807,
-    //     zone_id: 1196,
-    //     slug: "skyrim/kynesaegisboss3floor002_",
-    //     count: 3,
-    //     map_scale_data: MapScaleData { y: Some(14500.0), scale_factor: 0.0000980392, min_x: 73919.0, max_x: 84119.0, min_z: 51039.0, max_z: 61259.0 }, // WRONG
-    // },
-    // MapMeta {
-    //     name: "(Floor 3) Ritual Vault",
-    //     map_id: 1808,
-    //     zone_id: 1196,
-    //     slug: "skyrim/kynesaegisboss3floor003_",
-    //     count: 3,
-    //     map_scale_data: MapScaleData { y: Some(7750.0), scale_factor: 0.0000783699, min_x: 72660.0, max_x: 85420.0, min_z: 49719.0, max_z: 62519.0 },
-    // },
+    MapMeta {
+        name: "⚠ (Falgravn) Ruins",
+        map_id: 1806,
+        zone_id: 1196,
+        slug: "skyrim/kynesaegisboss3floor001_",
+        count: 3,
+        map_scale_data: MapScaleData { y: Some(21750.0), scale_factor: 0.0000978474, min_x: 19228.0, max_x: 30723.0, min_z: 4337.0, max_z: 15832.0 }, // probably slightly inaccurate
+    },
+    MapMeta {
+        name: "⚠ (Floor 2) Hidden Barrow",
+        map_id: 1807,
+        zone_id: 1196,
+        slug: "skyrim/kynesaegisboss3floor002_",
+        count: 3,
+        map_scale_data: MapScaleData { y: Some(14500.0), scale_factor: 0.0000878735, min_x: 19228.0, max_x: 30723.0, min_z: 4337.0, max_z: 15832.0  }, // probably slightly inaccurate
+    },
+    MapMeta {
+        name: "(Floor 3) Ritual Vault",
+        map_id: 1808,
+        zone_id: 1196,
+        slug: "skyrim/kynesaegisboss3floor003_",
+        count: 3,
+        map_scale_data: MapScaleData { y: Some(7070.0), scale_factor: 0.0000783699, min_x: 19228.0, max_x: 30723.0, min_z: 4337.0, max_z: 15832.0 },
+    },
 
     // Rockgrove
     MapMeta {
