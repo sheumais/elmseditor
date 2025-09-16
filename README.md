@@ -5,24 +5,27 @@
 - [x] Change marker icon
 - [x] Right click to place new marker
 - [x] Sub-zone auto-mapping
-- [ ] Height-based auto-mapping (Falgravn floors)
-- [ ] [Akamatsu format](https://esoui.com/downloads/info3684-Marker.html) support 
-- [ ] [Breadcrumbs](https://www.esoui.com/downloads/info3996-Breadcrumbs.html) support
+- [x] Height-based auto-mapping (Falgravn floors) (partially implemented)
+- [ ] [Akamatsu format](https://esoui.com/downloads/info3684-Marker.html) support
+- [x] [Breadcrumbs](https://www.esoui.com/downloads/info3996-Breadcrumbs.html) support (preview only)
+- [ ] M0R Icons support
 - [ ] More zones (Dungeons et cetera)?
 
-## Fully Supported Trials
+## Building
 
-- [x] Hel Ra Citadel
-- [x] Aetherian Archive
-- [x] Sanctum Ophidia
-- [x] Maw of Lorkhaj
-- [x] Halls of Fabrication
-- [x] Asylum Sanctorium
-- [x] Cloudrest
-- [x] Sunspire
-- [ ] Kyne's Aegis
-- [x] Rockgrove
-- [x] Dreadsail Reef
-- [x] Sanity's Edge
-- [x] Lucent Citadel
-- [x] Ossein Cage
+Download and install [Rust](https://rustup.rs/)
+
+Install [trunk](https://trunkrs.dev/)
+```sh
+cargo install --locked trunk
+```
+
+Add the WebAssembly target
+```sh
+rustup target add wasm32-unknown-unknown
+```
+
+Build via trunk and serve to localhost
+```sh
+trunk serve
+```
