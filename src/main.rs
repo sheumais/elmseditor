@@ -8,12 +8,12 @@ use yew_icons::{Icon, IconId};
 mod marker;
 mod zone;
 
-use crate::{marker::{lines_to_string, markers_to_elms_string, parse_elms_string, parse_lines_string, BreadcrumbLine, MarkerFlat, MarkerFormat, Position3D, ALL_ICONS}, zone::{populate_zone_data, Map}};
+use crate::{Marker::{Elms, M0r}, marker::{ALL_ICONS, BreadcrumbLine, ElmMarker, M0rTexture, Marker, Position3D, build_m0r_string, get_marker_id, lines_to_string, markers_to_elms_string, parse_elms_string, parse_lines_string, parse_m0r_string, set_marker_active}, zone::{Map, populate_zone_data}};
 
 #[derive(Properties, PartialEq)]
 pub struct CanvasMapProps {
     pub map: Map,
-    pub markers: Vec<MarkerFlat>,
+    pub markers: Vec<Marker>,
     pub lines: Vec<BreadcrumbLine>,
     pub zoom: f64,
     pub pan: (f64, f64),
@@ -146,7 +146,7 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                     let (x1, y1) = project(&line.position1);
                     let (x2, y2) = project(&line.position2);
 
-                    let (r, g, b) = line.colour;
+                    let (r, g, b, _a) = line.colour;
                     let rgba = format!("rgba({},{},{},{})", r, g, b, 0.9);
 
                     ctx.begin_path();
@@ -160,48 +160,137 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
 
                 let base = *canvas_width as f64 / 30.0;
                 for marker in markers.iter() {
-                    if !marker.active { continue; }
+                    let offscreen: HtmlCanvasElement = web_sys::window()
+                        .unwrap()
+                        .document()
+                        .unwrap()
+                        .create_element("canvas")
+                        .unwrap()
+                        .dyn_into::<HtmlCanvasElement>()
+                        .unwrap();
 
-                    let (mx, mz) = {
-                        let nx = (marker.position.x as f64 - map.scale_data.min_x as f64)
-                            / (map.scale_data.max_x as f64 - map.scale_data.min_x as f64);
-                        let nz = (marker.position.z as f64 - map.scale_data.min_z as f64)
-                            / (map.scale_data.max_z as f64 - map.scale_data.min_z as f64);
-                        (nx * w, nz * h)
-                    };
+                    let off_ctx: CanvasRenderingContext2d = offscreen
+                        .get_context("2d")
+                        .unwrap()
+                        .unwrap()
+                        .dyn_into::<CanvasRenderingContext2d>()
+                        .unwrap();
+                    match marker {
+                        Marker::Elms(elms_marker) => {
+                            if !elms_marker.active { continue; }
 
-                    let display_size = base * (1.0 / zoom) * (marker.size as f64);
-                    let dx = mx - display_size / 2.0;
-                    let dy = mz - display_size / 2.0;
-                    let icon_img = HtmlImageElement::new().unwrap();
-                    icon_img.set_src(&format!("static/icons/{}", String::from(marker.icon)));
+                            let (mx, mz) = {
+                                let nx = (elms_marker.position.x as f64 - map.scale_data.min_x as f64)
+                                    / (map.scale_data.max_x as f64 - map.scale_data.min_x as f64);
+                                let nz = (elms_marker.position.z as f64 - map.scale_data.min_z as f64)
+                                    / (map.scale_data.max_z as f64 - map.scale_data.min_z as f64);
+                                (nx * w, nz * h)
+                            };
 
-                    if icon_img.complete() {
-                        ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-                            &icon_img,
-                            0.0, 0.0,
-                            icon_img.width() as f64,
-                            icon_img.height() as f64,
-                            dx, dy,
-                            display_size,
-                            display_size,
-                        ).unwrap();
-                    } else {
-                        let ctx_clone = ctx.clone();
-                        let icon_clone = icon_img.clone();
-                        let draw = Closure::wrap(Box::new(move || {
-                            ctx_clone.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-                                &icon_clone,
-                                0.0, 0.0,
-                                icon_clone.width() as f64,
-                                icon_clone.height() as f64,
-                                dx, dy,
-                                display_size,
-                                display_size,
-                            ).unwrap();
-                        }) as Box<dyn Fn()>);
-                        icon_img.set_onload(Some(draw.as_ref().unchecked_ref()));
-                        draw.forget();
+                            let display_size = base * (1.0 / zoom) * (elms_marker.size as f64);
+                            let dx = mx - display_size / 2.0;
+                            let dy = mz - display_size / 2.0;
+                            let icon_img = HtmlImageElement::new().unwrap();
+                            icon_img.set_src(&format!("static/icons/{}", String::from(elms_marker.icon)));
+
+                            if icon_img.complete() {
+                                ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+                                    &icon_img,
+                                    0.0, 0.0,
+                                    icon_img.width() as f64,
+                                    icon_img.height() as f64,
+                                    dx, dy,
+                                    display_size,
+                                    display_size,
+                                ).unwrap();
+                            } else {
+                                let ctx_clone = ctx.clone();
+                                let icon_clone = icon_img.clone();
+                                let draw = Closure::wrap(Box::new(move || {
+                                    ctx_clone.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+                                        &icon_clone,
+                                        0.0, 0.0,
+                                        icon_clone.width() as f64,
+                                        icon_clone.height() as f64,
+                                        dx, dy,
+                                        display_size,
+                                        display_size,
+                                    ).unwrap();
+                                }) as Box<dyn Fn()>);
+                                icon_img.set_onload(Some(draw.as_ref().unchecked_ref()));
+                                draw.forget();
+                            }
+                        },
+                        Marker::M0r(m0r_marker) => {
+                            if !m0r_marker.active { continue; }
+                            let (mx, mz) = {
+                                let nx = (m0r_marker.position.x as f64 - map.scale_data.min_x as f64)
+                                    / (map.scale_data.max_x as f64 - map.scale_data.min_x as f64);
+                                let nz = (m0r_marker.position.z as f64 - map.scale_data.min_z as f64)
+                                    / (map.scale_data.max_z as f64 - map.scale_data.min_z as f64);
+                                (nx * w, nz * h)
+                            };
+
+                            let display_size = base * (1.0 / zoom) * (m0r_marker.size as f64);
+                            let dx = mx - display_size / 2.0;
+                            let dy = mz - display_size / 2.0;
+
+                            let icon_img = HtmlImageElement::new().unwrap();
+                            icon_img.set_src(&format!("static/icons/m0r/{}", String::from(m0r_marker.background_texture.clone())));
+                            let rgba = format!("rgba({},{},{},{})", m0r_marker.colour.0, m0r_marker.colour.1, m0r_marker.colour.2, m0r_marker.colour.3);
+
+                            let draw_marker = move |ctx: &CanvasRenderingContext2d, icon: &HtmlImageElement| {
+                                offscreen.set_width(base as u32);
+                                offscreen.set_height(base as u32);
+
+                                off_ctx.set_fill_style_str(&rgba);
+                                off_ctx.fill_rect(0.0, 0.0, base, base);
+                                off_ctx.set_global_composite_operation("destination-in").unwrap();
+                                off_ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+                                    icon,
+                                    0.0, 0.0,
+                                    icon.width() as f64,
+                                    icon.height() as f64,
+                                    0.0, 0.0,
+                                    base, base,
+                                ).unwrap();
+
+                                ctx.save();
+                                _ = ctx.translate(dx + display_size / 2.0, dy + display_size / 2.0);
+                                _ = ctx.scale(display_size / base, display_size / base);
+                                ctx.draw_image_with_html_canvas_element(&offscreen, -base/2.0, -base/2.0).unwrap();
+                                ctx.restore();
+                            };
+
+                            if icon_img.complete() {
+                                draw_marker(&ctx, &icon_img);
+                            } else {
+                                let ctx_clone = ctx.clone();
+                                let icon_clone = icon_img.clone();
+                                let draw_closure = Closure::wrap(Box::new(move || {
+                                    draw_marker(&ctx_clone, &icon_clone);
+                                }) as Box<dyn Fn()>);
+                                icon_img.set_onload(Some(draw_closure.as_ref().unchecked_ref()));
+                                draw_closure.forget();
+                            }
+
+                            if let Some(text) = &m0r_marker.text {
+                                ctx.save();
+                                ctx.set_font(format!("{}px Univers", 12.0/zoom).as_str());
+                                ctx.set_fill_style_str("white");
+                                ctx.set_stroke_style_str("black");
+                                ctx.set_line_width(3.0/zoom);
+                                ctx.set_text_align("center");
+                                ctx.set_text_baseline("top");
+
+                                let text_x = dx + display_size / 2.0;
+                                let text_y = dy + display_size / 2.0;
+
+                                let _ = ctx.stroke_text(&text, text_x, text_y);
+                                let _ = ctx.fill_text(&text, text_x, text_y);
+                                ctx.restore();
+                            }
+                        },
                     }
                 }
 
@@ -224,9 +313,9 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
 
 #[derive(Properties, PartialEq)]
 pub struct MarkerListPanelProps {
-    pub zone_markers: Vec<MarkerFlat>,
-    pub current_markers: Vec<MarkerFlat>,
-    pub on_update: Callback<Vec<MarkerFlat>>,
+    pub zone_markers: Vec<Marker>,
+    pub current_markers: Vec<Marker>,
+    pub on_update: Callback<Vec<Marker>>,
     pub world_bounds: (f32, f32, f32, f32),
 }
 
@@ -241,6 +330,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
             || ()
         });
     }
+    // web_sys::console::log_1(&format!("current: {current:?}").into());
 
     let delete_style = Style::new(css!(r#"
         color: #fff;
@@ -264,20 +354,40 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
             let mut new_current = (*current).clone();
             if let Some(m) = new_current.get_mut(pos) {
                 match field.as_str() {
-                    "x" => if let Ok(x) = val.parse() { m.position.x = x },
-                    "y" => if let Ok(y) = val.parse() { m.position.y = y },
-                    "z" => if let Ok(z) = val.parse() { m.position.z = z },
-                    "icon" => m.icon = val.as_str().into(),
+                    "x" => if let Ok(x) = val.parse() { 
+                        match m {
+                            Marker::Elms(marker) => {marker.position.x = x},
+                            Marker::M0r(marker) => {marker.position.x = x}
+                        } 
+                    },
+                    "y" => if let Ok(y) = val.parse() { 
+                        match m {
+                            Marker::Elms(marker) => {marker.position.y = y},
+                            Marker::M0r(marker) => {marker.position.y = y}
+                        } 
+                    },
+                    "z" => if let Ok(z) = val.parse() { 
+                        match m {
+                            Marker::Elms(marker) => {marker.position.z = z},
+                            Marker::M0r(marker) => {marker.position.z = z}
+                        } 
+                    },
+                    "icon" => {
+                        match m {
+                            Marker::Elms(marker) => {marker.icon = val.as_str().into()},
+                            Marker::M0r(marker) => {marker.background_texture = val.as_str().into()}
+                        }
+                    },
                     _ => {}
                 }
             }
             current.set(new_current.clone());
-            let rebuilt: Vec<MarkerFlat> = zone_for_upd
+            let rebuilt: Vec<Marker> = zone_for_upd
                 .iter()
                 .map(|zm| {
                     new_current
                         .iter()
-                        .find(|cm| cm.id == zm.id)
+                        .find(|cm| get_marker_id(*cm) == get_marker_id(zm))
                         .cloned()
                         .unwrap_or_else(|| zm.clone())
                 })
@@ -293,7 +403,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
         Callback::from(move |(pos, is_on): (usize, bool)| {
             let mut new_current = (*current).clone();
             if let Some(m) = new_current.get_mut(pos) {
-                m.active = is_on;
+                set_marker_active(m, is_on);
             }
             current.set(new_current.clone());
             let rebuilt = zone_for_toggle
@@ -301,7 +411,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                 .map(|zm| {
                     new_current
                         .iter()
-                        .find(|cm| cm.id == zm.id)
+                        .find(|cm| get_marker_id(*cm) == get_marker_id(zm))
                         .cloned()
                         .unwrap_or_else(|| zm.clone())
                 })
@@ -315,16 +425,16 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
         let zone_for_delete = zone_template.clone();
         let emit_for_delete = on_update_cb.clone();
         Callback::from(move |pos: usize| {
-            if let Some(to_delete) = (*current).get(pos).map(|m| m.id.clone()) {
-                let filtered_full: Vec<MarkerFlat> = zone_for_delete
+            if let Some(to_delete) = (*current).get(pos).map(|m| get_marker_id(m)) {
+                let filtered_full: Vec<Marker> = zone_for_delete
                     .iter()
                     .cloned()
-                    .filter(|zm| zm.id != to_delete)
+                    .filter(|zm| get_marker_id(zm) != to_delete)
                     .collect();
 
-                let new_current: Vec<MarkerFlat> = (*current)
+                let new_current: Vec<Marker> = (*current)
                     .iter()
-                    .filter(|cm| cm.id != to_delete)
+                    .filter(|cm| get_marker_id(&**cm) != to_delete)
                     .cloned()
                     .collect();
                 current.set(new_current);
@@ -344,75 +454,86 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                     let tog = toggle_active.clone();
                     let del = delete_marker.clone();
                     let picker = icon_picker_for.clone();
-                    html! {
-                    <li key={marker.id.clone()} style="display:flex;align-items:center;gap:1em;justify-content:center;padding:4px;">
-                        <img
-                            src={format!("static/icons/{}", String::from(marker.icon))}
-                            style="height:2em;cursor:pointer;"
-                            onclick={Callback::from(move |_| picker.set(Some(i)))}
-                        />
-
-                        { for ["x","y","z"].iter().map(move |&axis| {
-                            let up = upd.clone();
-                            let val = match axis {
-                                "x" => marker.position.x,
-                                "y" => marker.position.y,
-                                "z" => marker.position.z,
-                                _ => 0,
-                            };
-
-                            let (min, max) = match axis {
-                                "x" => (props.world_bounds.0 as i32, props.world_bounds.1 as i32),
-                                "z" => (props.world_bounds.2 as i32, props.world_bounds.3 as i32),
-                                _ => (-1e6 as i32, 1e6 as i32),
-                            };
-
-                            let val_str = val.to_string();
-                            let is_out_of_bounds = val < min || val > max || val == 0;
-
+                    match marker {
+                        Marker::Elms(marker) => {
                             html! {
-                            <label>
-                                {format!("{}: ", axis.to_uppercase())}
-                                <input
-                                    type="number"
-                                    min={min.to_string()}
-                                    max={max.to_string()}
-                                    step="25"
-                                    title=""
-                                    value={val_str.clone()}
-                                    oninput={Callback::from(move |e: InputEvent| {
-                                        let inp: HtmlInputElement = e.target_unchecked_into();
-                                        up.emit((i, axis.to_string(), inp.value()));
-                                    })}
-                                    style={format!(
-                                        "width:6em;{}",
-                                        if is_out_of_bounds { " outline: 1px solid red;" } else { "" }
-                                    )}
+                            <li key={marker.id.clone()} style="display:flex;align-items:center;gap:1em;justify-content:center;padding:4px;">
+                                <img
+                                    src={format!("static/icons/{}", String::from(marker.icon))}
+                                    style="height:2em;cursor:pointer;"
+                                    onclick={Callback::from(move |_| picker.set(Some(i)))}
                                 />
-                            </label>
-                            }
-                        }) }
-                        <label>
-                            <input
-                                type="checkbox"
-                                checked={marker.active}
-                                style="cursor:pointer;"
-                                onchange={Callback::from(move |e: Event| {
-                                    let inp: HtmlInputElement = e.target_unchecked_into();
-                                    tog.emit((i, inp.checked()));
-                                })}
-                            />
-                        </label>
 
-                        <Icon
-                            class={delete_style.clone()}
-                            style="cursor:pointer;"
-                            width={"1em"}
-                            height={"1em"}
-                            icon_id={IconId::BootstrapXLg}
-                            onclick={Callback::from(move |_| del.emit(i))}
-                        />
-                    </li>
+                                { for ["x","y","z"].iter().map(move |&axis| {
+                                    let up = upd.clone();
+                                    let val = match axis {
+                                        "x" => marker.position.x,
+                                        "y" => marker.position.y,
+                                        "z" => marker.position.z,
+                                        _ => 0,
+                                    };
+
+                                    let (min, max) = match axis {
+                                        "x" => (props.world_bounds.0 as i32, props.world_bounds.1 as i32),
+                                        "z" => (props.world_bounds.2 as i32, props.world_bounds.3 as i32),
+                                        _ => (-1e6 as i32, 1e6 as i32),
+                                    };
+
+                                    let val_str = val.to_string();
+                                    let is_out_of_bounds = val < min || val > max || val == 0;
+
+                                    html! {
+                                    <label>
+                                        {format!("{}: ", axis.to_uppercase())}
+                                        <input
+                                            type="number"
+                                            min={min.to_string()}
+                                            max={max.to_string()}
+                                            step="25"
+                                            title=""
+                                            value={val_str.clone()}
+                                            oninput={Callback::from(move |e: InputEvent| {
+                                                let inp: HtmlInputElement = e.target_unchecked_into();
+                                                up.emit((i, axis.to_string(), inp.value()));
+                                            })}
+                                            style={format!(
+                                                "width:6em;{}",
+                                                if is_out_of_bounds { " outline: 1px solid red;" } else { "" }
+                                            )}
+                                        />
+                                    </label>
+                                    }
+                                }) }
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={marker.active}
+                                        style="cursor:pointer;"
+                                        onchange={Callback::from(move |e: Event| {
+                                            let inp: HtmlInputElement = e.target_unchecked_into();
+                                            tog.emit((i, inp.checked()));
+                                        })}
+                                    />
+                                </label>
+
+                                <Icon
+                                    class={delete_style.clone()}
+                                    style="cursor:pointer;"
+                                    width={"1em"}
+                                    height={"1em"}
+                                    icon_id={IconId::BootstrapXLg}
+                                    onclick={Callback::from(move |_| del.emit(i))}
+                                />
+                            </li>
+                            }
+                        }
+                        Marker::M0r(marker) => {
+                            html!{
+                                <li key={marker.id.clone()} style="display:flex;align-items:center;gap:1em;justify-content:center;padding:4px;">
+                                    {format!{"M0r marker here"}}
+                                </li>
+                            }
+                        },
                     }
                 }) }
                 </ul>
@@ -470,7 +591,7 @@ fn app() -> Html {
     let selected_zone_index = use_state(|| 0_usize);
     let selected_map_index = use_state(|| 0_usize);
     let elms_input = use_state(|| String::new());
-    let parsed_markers = use_state(|| HashMap::<u16, Vec<MarkerFlat>>::new());
+    let parsed_markers = use_state(|| HashMap::<u16, Vec<Marker>>::new());
     let parsed_lines = use_state(|| HashMap::<u16, Vec<BreadcrumbLine>>::new());
     let zoom = use_state(|| 1.0);
     let pan = use_state(|| (0.0, 0.0));
@@ -630,7 +751,7 @@ fn app() -> Html {
                     let pos_y = scale.y.unwrap_or(0.0);
                     let pos_z = scale.min_z as f64 + nz * (scale.max_z - scale.min_z) as f64;
 
-                    let marker = MarkerFlat {
+                    let marker = ElmMarker {
                         active: true,
                         icon: "squares/marker_lightblue.png".into(),
                         position: Position3D {
@@ -640,13 +761,12 @@ fn app() -> Html {
                         },
                         size: 1,
                         id: parsed_markers.get(&zone.id).map(|v| v.len() as u16).unwrap_or(0),
-                        format: MarkerFormat::Bitrock,
                         map_id: map.map_id,
                     };
 
                     let mut new_map = (*parsed_markers).clone();
                     let entry = new_map.entry(zone.id).or_default();
-                    entry.push(marker);
+                    entry.push(Elms(marker));
                     parsed_markers.set(new_map);
                 }
             }
@@ -666,12 +786,16 @@ fn app() -> Html {
             elms_input.set(v.clone());
 
             if !v.is_empty() {
-                let new_map = parse_elms_string(&v, zones.clone());
+                // let new_map = parse_elms_string(&v, zones.clone());
                 // web_sys::console::log_1(&format!("parsed_markers map entries: {}", new_map.len()).into());
-                parsed_markers.set(new_map);
+                // parsed_markers.set(new_map);
 
-                let new_lines = parse_lines_string(&v, zones.clone());
-                parsed_lines.set(new_lines);
+                // let new_lines = parse_lines_string(&v, zones.clone());
+                // parsed_lines.set(new_lines);
+
+                let new_m0r_markers = parse_m0r_string(&v, zones.clone());
+                // web_sys::console::log_1(&format!("parsed_markers m0r map entries: {}", new_m0r_markers.len()).into());
+                parsed_markers.set(new_m0r_markers);
             } else {
                 parsed_markers.set(HashMap::new());
                 parsed_lines.set(HashMap::new());
@@ -722,7 +846,7 @@ fn app() -> Html {
         let selected_zone_index = selected_zone_index.clone();
         let zone_ids = zone_ids.clone();
 
-        Callback::from(move |update: (Option<Vec<MarkerFlat>>, Option<Vec<BreadcrumbLine>>)| {
+        Callback::from(move |update: (Option<Vec<Marker>>, Option<Vec<BreadcrumbLine>>)| {
             let (maybe_markers, maybe_lines) = update;
             let zone_id = zone_ids[*selected_zone_index];
 
@@ -740,7 +864,7 @@ fn app() -> Html {
             let lines_map = (*parsed_lines).clone();
 
             let mut combined = String::new();
-            let markers_str = markers_to_elms_string(&markers_map);
+            let markers_str = build_m0r_string(&markers_map);
             let lines_str = lines_to_string(&lines_map);
 
             if !markers_str.trim().is_empty() && !lines_str.trim().is_empty() {
@@ -760,7 +884,7 @@ fn app() -> Html {
 
     let update_markers = {
         let cb = update_elms_input.clone();
-        Callback::from(move |markers: Vec<MarkerFlat>| {
+        Callback::from(move |markers: Vec<Marker>| {
             cb.emit((Some(markers), None));
         })
     };
@@ -858,9 +982,19 @@ fn app() -> Html {
     let pan = *pan.clone();
 
     let zone_markers = parsed_markers.get(&zone.id).cloned().unwrap_or_default();
+    // web_sys::console::log_1(&format!("zone_markers: {:?}", zone_markers).into());
     let zone_marker_clone = zone_markers.clone();
-    let other_current_markers: Vec<MarkerFlat> = zone_markers.into_iter()
-        .filter(|m| {m.map_id == map.map_id})
+    let other_current_markers: Vec<Marker> = zone_markers.into_iter()
+        .filter(|m| {
+            match m {
+                Elms(elms_marker) => {
+                    elms_marker.map_id == map.map_id
+                }
+                M0r(m0r_marker) => {
+                    m0r_marker.map_id == map.map_id
+                }
+            }
+        })
         .collect();
 
     let zone_lines = parsed_lines.get(&zone.id).cloned().unwrap_or_default();
@@ -907,7 +1041,16 @@ fn app() -> Html {
                             for zone.maps.iter().enumerate().map(|(i, map)| {
                                 let marker_count = zone_marker_clone
                                     .iter()
-                                    .filter(|m| m.map_id == map.map_id)
+                                    .filter(|m| {
+                                        match m {
+                                            Elms(elms_marker) => {
+                                                elms_marker.map_id == map.map_id
+                                            }
+                                            M0r(m0r_marker) => {
+                                                m0r_marker.map_id == map.map_id
+                                            }
+                                        }
+                                    })
                                     .count();
 
                                 let label = if marker_count > 0 {
