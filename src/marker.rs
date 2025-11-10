@@ -4,7 +4,6 @@ use js_sys::Date;
 use regex::Regex;
 
 use crate::zone::{Map, Zone};
-use MarkerIcon::{Elms, M0r};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Marker {
@@ -105,24 +104,10 @@ pub fn get_marker_id(m: &Marker) -> u16 {
     }
 }
 
-pub fn get_marker_map_id(m: &Marker) -> u16 {
-    match m {
-        Marker::Elms(marker) => {marker.map_id},
-        Marker::M0r(marker) => {marker.map_id}
-    }
-}
-
 pub fn get_marker_position(m: &Marker) -> Position3D {
     match m {
         Marker::Elms(marker) => {marker.position},
         Marker::M0r(marker) => {marker.position}
-    }
-}
-
-pub fn get_marker_icon(m: &Marker) -> MarkerIcon {
-    match m {
-        Marker::Elms(marker) => {MarkerIcon::Elms(marker.icon)},
-        Marker::M0r(marker) => {MarkerIcon::M0r(marker.background_texture.clone())}
     }
 }
 
@@ -242,10 +227,6 @@ pub enum M0rIcon {
     ClassArcanist
 }
 
-pub enum MarkerIcon {
-    Elms(ElmsIcon),
-    M0r(M0rTexture)
-}
 
 pub const ALL_ELMS_ICONS: &[ElmsIcon] = &[
     ElmsIcon::Num(1),
@@ -344,102 +325,6 @@ pub const ALL_M0R_ICONS: &[M0rTexture] = &[
     M0rTexture::Known(M0rIcon::ClassNecromancer),
     M0rTexture::Known(M0rIcon::ClassTemplar),
     M0rTexture::Known(M0rIcon::ClassArcanist),
-];
-
-pub const ALL_ICONS: &[MarkerIcon] = &[
-    Elms(ElmsIcon::Num(1)),
-    Elms(ElmsIcon::Num(2)),
-    Elms(ElmsIcon::Num(3)),
-    Elms(ElmsIcon::Num(4)),
-    Elms(ElmsIcon::Num(5)),
-    Elms(ElmsIcon::Num(6)),
-    Elms(ElmsIcon::Num(7)),
-    Elms(ElmsIcon::Num(8)),
-    Elms(ElmsIcon::Num(9)),
-    Elms(ElmsIcon::Num(10)),
-    Elms(ElmsIcon::Num(11)),
-    Elms(ElmsIcon::Num(12)),
-    Elms(ElmsIcon::Arrow),
-    Elms(ElmsIcon::MarkerLightBlue),
-    Elms(ElmsIcon::SquareBlue),
-    Elms(ElmsIcon::SquareGreen),
-    Elms(ElmsIcon::SquareOrange),
-    Elms(ElmsIcon::SquareOrangeOT),
-    Elms(ElmsIcon::SquarePink),
-    Elms(ElmsIcon::SquareRed),
-    Elms(ElmsIcon::SquareRedMT),
-    Elms(ElmsIcon::SquareYellow),
-    Elms(ElmsIcon::SquareTwoBlue),
-    Elms(ElmsIcon::SquareTwoBlueOne),
-    Elms(ElmsIcon::SquareTwoBlueTwo),
-    Elms(ElmsIcon::SquareTwoBlueThree),
-    Elms(ElmsIcon::SquareTwoBlueFour),
-    Elms(ElmsIcon::SquareTwoGreen),
-    Elms(ElmsIcon::SquareTwoGreenOne),
-    Elms(ElmsIcon::SquareTwoGreenTwo),
-    Elms(ElmsIcon::SquareTwoGreenThree),
-    Elms(ElmsIcon::SquareTwoGreenFour),
-    Elms(ElmsIcon::SquareTwoOrange),
-    Elms(ElmsIcon::SquareTwoOrangeOne),
-    Elms(ElmsIcon::SquareTwoOrangeTwo),
-    Elms(ElmsIcon::SquareTwoOrangeThree),
-    Elms(ElmsIcon::SquareTwoOrangeFour),
-    Elms(ElmsIcon::SquareTwoPink),
-    Elms(ElmsIcon::SquareTwoRed),
-    Elms(ElmsIcon::SquareTwoRedOne),
-    Elms(ElmsIcon::SquareTwoRedTwo),
-    Elms(ElmsIcon::SquareTwoRedThree),
-    Elms(ElmsIcon::SquareTwoRedFour),
-    Elms(ElmsIcon::SquareTwoYellow),
-    Elms(ElmsIcon::Letter('a')),
-    Elms(ElmsIcon::Letter('b')),
-    Elms(ElmsIcon::Letter('c')),
-    Elms(ElmsIcon::Letter('d')),
-    Elms(ElmsIcon::Letter('e')),
-    Elms(ElmsIcon::Letter('f')),
-    Elms(ElmsIcon::Letter('g')),
-    Elms(ElmsIcon::Letter('h')),
-    Elms(ElmsIcon::Letter('i')),
-    Elms(ElmsIcon::Letter('j')),
-    Elms(ElmsIcon::Letter('k')),
-    Elms(ElmsIcon::Letter('l')),
-    Elms(ElmsIcon::Letter('m')),
-    Elms(ElmsIcon::Letter('n')),
-    Elms(ElmsIcon::Letter('o')),
-    Elms(ElmsIcon::Letter('p')),
-    Elms(ElmsIcon::Letter('q')),
-    Elms(ElmsIcon::Letter('r')),
-    Elms(ElmsIcon::Letter('s')),
-    Elms(ElmsIcon::Letter('t')),
-    Elms(ElmsIcon::Letter('u')),
-    Elms(ElmsIcon::Letter('v')),
-    Elms(ElmsIcon::Letter('w')),
-    Elms(ElmsIcon::Letter('x')),
-    Elms(ElmsIcon::Letter('y')),
-    Elms(ElmsIcon::Letter('z')),
-    Elms(ElmsIcon::SharkPog),
-    Elms(ElmsIcon::Unknown),
-    M0r(M0rTexture::Known(M0rIcon::Blank)),
-    M0r(M0rTexture::Known(M0rIcon::Circle)),
-    M0r(M0rTexture::Known(M0rIcon::Hexagon)),
-    M0r(M0rTexture::Known(M0rIcon::Square)),
-    M0r(M0rTexture::Known(M0rIcon::Diamond)),
-    M0r(M0rTexture::Known(M0rIcon::Octagon)),
-    M0r(M0rTexture::Known(M0rIcon::Chevron)),
-    M0r(M0rTexture::Known(M0rIcon::SharkPog)),
-    M0r(M0rTexture::Known(M0rIcon::AllianceBadgeAldmeri)),
-    M0r(M0rTexture::Known(M0rIcon::AllianceBadgeEbonheart)),
-    M0r(M0rTexture::Known(M0rIcon::AllianceBadgeDaggerfall)),
-    M0r(M0rTexture::Known(M0rIcon::RoleIconDPS)),
-    M0r(M0rTexture::Known(M0rIcon::RoleIconTank)),
-    M0r(M0rTexture::Known(M0rIcon::RoleIconHealer)),
-    M0r(M0rTexture::Known(M0rIcon::ClassDragonknight)),
-    M0r(M0rTexture::Known(M0rIcon::ClassSorcerer)),
-    M0r(M0rTexture::Known(M0rIcon::ClassNightblade)),
-    M0r(M0rTexture::Known(M0rIcon::ClassWarden)),
-    M0r(M0rTexture::Known(M0rIcon::ClassNecromancer)),
-    M0r(M0rTexture::Known(M0rIcon::ClassTemplar)),
-    M0r(M0rTexture::Known(M0rIcon::ClassArcanist)),
 ];
 
 fn find_best_map<'a>(x: i32, y: i32, z: i32, zone: &'a Zone) -> Option<&'a Map> {
@@ -546,15 +431,6 @@ pub fn hex_to_rgba(hex: u32) -> (u8, u8, u8, u8) {
         let b = ((hex >> 8) & 0xFF) as u8;
         let a = (hex & 0xFF) as u8;
         (r, g, b, a)
-    }
-}
-
-pub fn rgba_to_hex(rgba: (u8, u8, u8, u8)) -> u32 {
-    let (r, g, b, a) = rgba;
-    if a == 255 {
-        ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
-    } else {
-        ((r as u32) << 24) | ((g as u32) << 16) | ((b as u32) << 8) | (a as u32)
     }
 }
 

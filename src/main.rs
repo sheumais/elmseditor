@@ -1131,7 +1131,7 @@ fn app() -> Html {
             elms_input.set(v.clone());
 
             if !v.is_empty() {
-                let new_m0r_markers: HashMap<u16, Vec<Marker>> = parse_m0r_string(&v, zones.clone());
+                let new_m0r_markers = parse_m0r_string(&v, zones.clone());
 
                 let new_elms_markers = parse_elms_string(&v, zones.clone());
 
@@ -1144,6 +1144,18 @@ fn app() -> Html {
                         .or_insert(markers);
                 }
 
+                for (_zone_id, markers) in combined_markers.iter_mut() {
+                    let mut next_id: u16 = 0;
+                    for m in markers.iter_mut() {
+                        match m {
+                            Marker::Elms(el) => el.id = next_id,
+                            Marker::M0r(m0r) => m0r.id = next_id,
+                        }
+                        next_id = next_id.saturating_add(1);
+                    }
+                }
+                
+                web_sys::console::log_1(&format!("{:?}", combined_markers).into());
                 parsed_markers.set(combined_markers);
 
                 let new_lines = parse_lines_string(&v, zones.clone());

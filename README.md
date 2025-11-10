@@ -6,9 +6,9 @@
 - [x] Right click to place new marker
 - [x] Sub-zone auto-mapping
 - [x] Height-based auto-mapping (Falgravn floors) (partially implemented)
-- [ ] [Akamatsu format](https://esoui.com/downloads/info3684-Marker.html) support
 - [x] [Breadcrumbs](https://www.esoui.com/downloads/info3996-Breadcrumbs.html) support (preview only)
-- [ ] M0R Icons support
+- [x] [More (M0R) Markers](https://www.esoui.com/downloads/info4266-MoreMarkers.html) support
+- [ ] [Akamatsu format](https://esoui.com/downloads/info3684-Marker.html) support
 - [ ] More zones (Dungeons et cetera)?
 
 ## Building
