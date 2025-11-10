@@ -8,7 +8,8 @@ use yew_icons::{Icon, IconId};
 mod marker;
 mod zone;
 
-use crate::{Marker::{Elms, M0r}, marker::{ALL_ICONS, BreadcrumbLine, ElmMarker, M0rTexture, Marker, Position3D, build_m0r_string, get_marker_id, lines_to_string, markers_to_elms_string, parse_elms_string, parse_lines_string, parse_m0r_string, set_marker_active}, zone::{Map, populate_zone_data}};
+use crate::marker::{ALL_ELMS_ICONS, ALL_M0R_ICONS, BreadcrumbLine, ElmMarker, Marker::{self, Elms, M0r}, MarkerTypes, Position3D, build_elms_string, build_m0r_string, get_marker_id, hex_to_rgba, lines_to_string, m0r_texture_to_og, parse_elms_string, parse_lines_string, parse_m0r_string, rgba_to_hex_string, set_marker_active};
+use crate::zone::{Map, populate_zone_data};
 
 #[derive(Properties, PartialEq)]
 pub struct CanvasMapProps {
@@ -19,6 +20,7 @@ pub struct CanvasMapProps {
     pub pan: (f64, f64),
     pub width: u32,
     pub height: u32,
+    pub force_redraw: bool,
 }
 #[function_component(CanvasMap)]
 fn canvas_map(props: &CanvasMapProps) -> Html {
@@ -31,6 +33,7 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
     let pan = props.pan;
     let canvas_width = props.width;
     let canvas_height = props.height;
+    let force_redraw = props.force_redraw;
     let lines = props.lines.clone();
 
     let tile_images = {
@@ -115,8 +118,8 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
         let markers = markers.clone();
         let lines = lines.clone();
 
-        use_effect_with((markers.clone(), lines.clone(), zoom, pan, canvas_width, canvas_height),
-            move |(markers, lines, zoom, pan, canvas_width, canvas_height)| {
+        use_effect_with((markers.clone(), lines.clone(), zoom, pan, canvas_width, canvas_height, force_redraw),
+            move |(markers, lines, zoom, pan, canvas_width, canvas_height, _force_redraw)| {
                 let canvas = marker_canvas_ref.cast::<HtmlCanvasElement>().unwrap();
                 let ctx = canvas
                     .get_context("2d").unwrap().unwrap()
@@ -160,21 +163,6 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
 
                 let base = *canvas_width as f64 / 30.0;
                 for marker in markers.iter() {
-                    let offscreen: HtmlCanvasElement = web_sys::window()
-                        .unwrap()
-                        .document()
-                        .unwrap()
-                        .create_element("canvas")
-                        .unwrap()
-                        .dyn_into::<HtmlCanvasElement>()
-                        .unwrap();
-
-                    let off_ctx: CanvasRenderingContext2d = offscreen
-                        .get_context("2d")
-                        .unwrap()
-                        .unwrap()
-                        .dyn_into::<CanvasRenderingContext2d>()
-                        .unwrap();
                     match marker {
                         Marker::Elms(elms_marker) => {
                             if !elms_marker.active { continue; }
@@ -223,6 +211,21 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                         },
                         Marker::M0r(m0r_marker) => {
                             if !m0r_marker.active { continue; }
+                            let offscreen: HtmlCanvasElement = web_sys::window()
+                                .unwrap()
+                                .document()
+                                .unwrap()
+                                .create_element("canvas")
+                                .unwrap()
+                                .dyn_into::<HtmlCanvasElement>()
+                                .unwrap();
+
+                            let off_ctx: CanvasRenderingContext2d = offscreen
+                                .get_context("2d")
+                                .unwrap()
+                                .unwrap()
+                                .dyn_into::<CanvasRenderingContext2d>()
+                                .unwrap();
                             let (mx, mz) = {
                                 let nx = (m0r_marker.position.x as f64 - map.scale_data.min_x as f64)
                                     / (map.scale_data.max_x as f64 - map.scale_data.min_x as f64);
@@ -231,7 +234,8 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                                 (nx * w, nz * h)
                             };
 
-                            let display_size = base * (1.0 / zoom) * (m0r_marker.size as f64);
+                            //let display_size = ((1.0 + m0r_marker.size as f64) * 100.0 / map_x_range) * w;
+                            let display_size = base * (1.0 / zoom) * (1.0 + (m0r_marker.size as f64 / 5.0));
                             let dx = mx - display_size / 2.0;
                             let dy = mz - display_size / 2.0;
 
@@ -243,6 +247,7 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                                 offscreen.set_width(base as u32);
                                 offscreen.set_height(base as u32);
 
+                                off_ctx.set_global_composite_operation("multiply").unwrap();
                                 off_ctx.set_fill_style_str(&rgba);
                                 off_ctx.fill_rect(0.0, 0.0, base, base);
                                 off_ctx.set_global_composite_operation("destination-in").unwrap();
@@ -256,8 +261,8 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                                 ).unwrap();
 
                                 ctx.save();
-                                _ = ctx.translate(dx + display_size / 2.0, dy + display_size / 2.0);
-                                _ = ctx.scale(display_size / base, display_size / base);
+                                ctx.translate(dx + display_size / 2.0, dy + display_size / 2.0).unwrap();
+                                ctx.scale(display_size / base, display_size / base).unwrap();
                                 ctx.draw_image_with_html_canvas_element(&offscreen, -base/2.0, -base/2.0).unwrap();
                                 ctx.restore();
                             };
@@ -286,8 +291,8 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                                 let text_x = dx + display_size / 2.0;
                                 let text_y = dy + display_size / 2.0;
 
-                                let _ = ctx.stroke_text(&text, text_x, text_y);
-                                let _ = ctx.fill_text(&text, text_x, text_y);
+                                ctx.stroke_text(&text, text_x, text_y).unwrap();
+                                ctx.fill_text(&text, text_x, text_y).unwrap();
                                 ctx.restore();
                             }
                         },
@@ -336,6 +341,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
         color: #fff;
         transition: color 0.3s, scale 0.3s;
         cursor: pointer;
+        margin-left: 1em;
         &:hover {
             color: #ff0000;
             transform: scale(1.5);
@@ -376,6 +382,86 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                         match m {
                             Marker::Elms(marker) => {marker.icon = val.as_str().into()},
                             Marker::M0r(marker) => {marker.background_texture = val.as_str().into()}
+                        }
+                    },
+                    "size" => {
+                        match m {
+                            Marker::M0r(marker) => {marker.size = val.parse::<f32>().unwrap_or(1.0)}
+                            _ => {},
+                        }
+                    },
+                    "pitch" => {
+                        match m {
+                            Marker::M0r(marker) => {
+                                let new_pitch = val.parse::<i8>();
+                                if new_pitch.is_err() {marker.orientation = None} else {
+                                    let pitch = new_pitch.unwrap().clamp(-90, 90);
+                                    if let Some(existing) = marker.orientation {
+                                        marker.orientation = Some((pitch, existing.1));
+                                    } else {
+                                        marker.orientation = Some((pitch, 0));
+                                    }
+                                }
+                            }
+                            _ => {},
+                        }
+                    },
+                    "yaw" => {
+                        match m {
+                            Marker::M0r(marker) => {
+                                let new_yaw = val.parse::<i16>();
+                                if new_yaw.is_err() {marker.orientation = None} else {
+                                    let yaw = new_yaw.unwrap().clamp(0, 360);
+                                    if let Some(existing) = marker.orientation {
+                                        marker.orientation = Some((existing.0, yaw));
+                                    } else {
+                                        marker.orientation = Some((0, yaw));
+                                    }
+                                }
+                            }
+                            _ => {},
+                        }
+                    },
+                    "text" => {
+                        match m {
+                            Marker::M0r(marker) => {
+                                if val.is_empty() {
+                                    marker.text = None;
+                                } else {
+                                    marker.text = Some(val);
+                                }
+                            }
+                            _ => {},
+                        }
+                    },
+                    "colour" => {
+                        match m {
+                            Marker::M0r(marker) => {
+                                let x = val.trim_start_matches('#').parse::<u32>().unwrap_or(65535);
+                                marker.colour = hex_to_rgba(x);
+                            }
+                            _ => {},
+                        }
+                    },
+                    "colour_tuple" => {
+                        match m {
+                            Marker::M0r(marker) => {
+                                let nums: Vec<u8> = val
+                                    .trim()
+                                    .trim_start_matches('(')
+                                    .trim_end_matches(')')
+                                    .split(',')
+                                    .filter_map(|p| p.trim().parse::<u8>().ok())
+                                    .collect();
+                                if nums.len() >= 4 {
+                                    let r = nums[0];
+                                    let g = nums[1];
+                                    let b = nums[2];
+                                    let a = nums[3];
+                                    marker.colour = (r, g, b, a);
+                                }
+                            }
+                            _ => {},
                         }
                     },
                     _ => {}
@@ -444,16 +530,24 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
         })
     };
 
+    let input_text_style = css!("width: 5em; height: 1em; flex-basis: 26%;");
+
     html! {
         <div style="display:flex;flex-direction:column;max-height:85vh;margin-bottom:5vh;text-shadow: 2px 1.5px black;">
             <h1 style="text-align:center;">{"Markers"}</h1>
             <div style="overflow-y:auto;">
-                <ul style="padding:0;margin:0;list-style:none;">
+                <ul style="padding:0;margin:0;list-style:none;display:flex;flex-direction:column;">
                 { for current.iter().enumerate().map(|(i, marker)| {
                     let upd = update_marker.clone();
                     let tog = toggle_active.clone();
                     let del = delete_marker.clone();
+                    let up_size = update_marker.clone();
+                    let up_pitch = update_marker.clone();
+                    let up_yaw = update_marker.clone();
+                    let up_text = update_marker.clone();
                     let picker = icon_picker_for.clone();
+                    let input_text_style = input_text_style.clone();
+                    let input_text_style_clone = input_text_style.clone();
                     match marker {
                         Marker::Elms(marker) => {
                             html! {
@@ -530,7 +624,147 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                         Marker::M0r(marker) => {
                             html!{
                                 <li key={marker.id.clone()} style="display:flex;align-items:center;gap:1em;justify-content:center;padding:4px;">
-                                    {format!{"M0r marker here"}}
+                                    <img
+                                        src={format!("static/icons/m0r/{}", String::from(marker.background_texture.clone()))}
+                                        style="height:2em;cursor:pointer;"
+                                        onclick={Callback::from(move |_| picker.set(Some(i)))}
+                                    />
+
+                                    <div class={css!("display:flex;flex-flow: column wrap; max-height: 4em;")}>
+                                        {for ["x","y","z"].iter().map(move |&axis| {
+                                            let up = upd.clone();
+                                            let val = match axis {
+                                                "x" => marker.position.x,
+                                                "y" => marker.position.y,
+                                                "z" => marker.position.z,
+                                                _ => 0,
+                                            };
+
+                                            let (min, max) = match axis {
+                                                "x" => (props.world_bounds.0 as i32, props.world_bounds.1 as i32),
+                                                "z" => (props.world_bounds.2 as i32, props.world_bounds.3 as i32),
+                                                _ => (-1e6 as i32, 1e6 as i32),
+                                            };
+
+                                            let val_str = val.to_string();
+                                            let is_out_of_bounds = val < min || val > max || val == 0;
+
+                                            html! {
+                                                <label>
+                                                    <input
+                                                        type="number"
+                                                        min={min.to_string()}
+                                                        max={max.to_string()}
+                                                        step="25"
+                                                        title={format!("{}", axis.to_uppercase())}
+                                                        value={val_str.clone()}
+                                                        oninput={Callback::from(move |e: InputEvent| {
+                                                            let inp: HtmlInputElement = e.target_unchecked_into();
+                                                            up.emit((i, axis.to_string(), inp.value()));
+                                                        })}
+                                                        class={
+                                                            if is_out_of_bounds { classes!(css!("outline: 1px solid red;"), input_text_style.clone()) } else { classes!(input_text_style.clone()) }
+                                                        }
+                                                    />
+                                                </label>
+                                            }
+                                        })}
+                                    </div>
+                                    <div class={css!("display:flex;flex-flow: column wrap; max-height: 4em; text-align: right;")}>
+                                        <label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="10"
+                                                step="0.1"
+                                                title={format!("{} ({} to {})", "Size", "0.0", "10.0")}
+                                                value={marker.size.to_string().clone()}
+                                                oninput={Callback::from(move |e: InputEvent| {
+                                                    let inp: HtmlInputElement = e.target_unchecked_into();
+                                                    up_size.emit((i, "size".to_string(), inp.value()));
+                                                })}
+                                                class={classes!(input_text_style_clone.clone())}
+                                            />
+                                        </label>
+                                        <label>
+                                            <input
+                                                type="number"
+                                                min="-90"
+                                                max="90"
+                                                step="1"
+                                                title={format!("{} ({} to {})", "Pitch", "-90", "90")}
+                                                value={
+                                                    if let Some(existing) = marker.orientation {
+                                                        existing.0.to_string()
+                                                    } else {
+                                                        "-".to_string()
+                                                    }
+                                                }
+                                                oninput={Callback::from(move |e: InputEvent| {
+                                                    let inp: HtmlInputElement = e.target_unchecked_into();
+                                                    up_pitch.emit((i, "pitch".to_string(), inp.value()));
+                                                })}
+                                                class={classes!(input_text_style_clone.clone())}
+                                            />
+                                        </label>
+                                        <label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="360"
+                                                step="1"
+                                                title={format!("{} ({} to {})", "Yaw", "0", "360")}
+                                                value={
+                                                    if let Some(existing) = marker.orientation {
+                                                        existing.1.to_string()
+                                                    } else {
+                                                        "-".to_string()
+                                                    }
+                                                }
+                                                oninput={Callback::from(move |e: InputEvent| {
+                                                    let inp: HtmlInputElement = e.target_unchecked_into();
+                                                    up_yaw.emit((i, "yaw".to_string(), inp.value()));
+                                                })}
+                                                class={classes!(input_text_style_clone.clone())}
+                                            />
+                                        </label>
+                                    </div>
+                                    <textarea
+                                        oninput={Callback::from(move |e: InputEvent| {
+                                            let inp: HtmlInputElement = e.target_unchecked_into();
+                                            up_text.emit((i, "text".to_string(), inp.value()));
+                                        })}
+                                        value={marker.text.clone().unwrap_or("".to_string())}
+                                        placeholder=""
+                                        title={"Marker text"}
+                                        style="
+                                            width: 10em;
+                                            height: 3em;
+                                            padding: 0.5em;
+                                            resize: none;
+                                        "
+                                    />
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={marker.active}
+                                            style="cursor:pointer;"
+                                            title="Enabled"
+                                            onchange={Callback::from(move |e: Event| {
+                                                let inp: HtmlInputElement = e.target_unchecked_into();
+                                                tog.emit((i, inp.checked()));
+                                            })}
+                                        />
+                                    </label>
+                                    <Icon
+                                        class={delete_style.clone()}
+                                        style="cursor:pointer;"
+                                        title={"Delete"}
+                                        width={"1em"}
+                                        height={"1em"}
+                                        icon_id={IconId::BootstrapXLg}
+                                        onclick={Callback::from(move |_| del.emit(i))}
+                                    />
                                 </li>
                             }
                         },
@@ -541,6 +775,18 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
 
             {
                 if let Some(idx) = *icon_picker_for {
+                    let upd_icon = update_marker.clone();
+                    let upd_colour = update_marker.clone();
+                    let upd_colour_rgba = update_marker.clone();
+                    let marker = current.get(idx).unwrap();
+                    let marker_type = match marker {
+                        Marker::Elms(_) => {
+                            MarkerTypes::Elms
+                        },
+                        Marker::M0r(_) => {
+                            MarkerTypes::M0r
+                        }
+                    };
                     let close = {
                         let picker = icon_picker_for.clone();
                         Callback::from(move |_| picker.set(None))
@@ -558,21 +804,120 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                     <div class="modal-overlay" onclick={close.clone()} style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);">
                         <div class="modal-content" onclick={Callback::from(|e: MouseEvent| e.stop_propagation())}
                             style="background:#333;padding:1em;border-radius:8px;max-width:40vw;max-height:80vh;overflow:auto;margin:5vh auto;">
-                            <h2 style="text-align:center;margin:0px 0px 1em 0px;">{"Select Icon"}</h2>
+                            <h2 style="text-align:center;margin:10px 0px 1em 0px;">{"Select Icon"}</h2>
                             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(50px,1fr));gap:8px;">
-                                { for ALL_ICONS.iter().map(move |&icon| {
-                                    let choose = choose.clone();
-                                    html! {
-                                    <div style="text-align:center;">
-                                        <img
-                                            src={format!("static/icons/{}", icon.to_string())}
-                                            style="width:2em;height:2em;cursor:pointer;"
-                                            onclick={Callback::from(move |_| choose.emit(icon.to_string()))}
-                                        />
-                                    </div>
+                                {
+                                    match marker_type {
+                                        MarkerTypes::Elms => html! {
+                                            for ALL_ELMS_ICONS.iter().map(|icon| {
+                                                let choose = choose.clone();
+                                                let icon_name = String::from(icon.clone());
+                                                let src = format!("static/icons/{}", icon_name.clone());
+                                                html! {
+                                                    <div style="text-align:center;">
+                                                        <img
+                                                            src={src}
+                                                            style="width:2em;height:2em;cursor:pointer;"
+                                                            onclick={Callback::from(move |_| choose.emit(icon_name.clone()))}
+                                                        />
+                                                    </div>
+                                                }
+                                            })
+                                        },
+                                        MarkerTypes::M0r => html! {
+                                            for ALL_M0R_ICONS.iter().map(|icon| {
+                                                let choose = choose.clone();
+                                                let icon_name = String::from(icon.clone());
+                                                let src = format!("static/icons/m0r/{}", icon_name.clone());
+                                                html! {
+                                                    <div style="text-align:center;">
+                                                        <img
+                                                            src={src}
+                                                            style="width:2em;height:2em;cursor:pointer;"
+                                                            onclick={Callback::from(move |_| choose.emit(m0r_texture_to_og(icon)))}
+                                                        />
+                                                    </div>
+                                                }
+                                            })
+                                        }
                                     }
-                                }) }
+                                }
                             </div>
+                            {
+                                match marker {
+                                    M0r(m) => html!{
+                                        <>
+                                            <h3 style="text-align:center;margin:10px 0px 1em 0px;">{"Use Custom File Path"}</h3>
+                                            <textarea
+                                                oninput={Callback::from(move |e: InputEvent| {
+                                                    let inp: HtmlInputElement = e.target_unchecked_into();
+                                                    upd_icon.emit((idx, "icon".to_string(), inp.value()));
+                                                })}
+                                                // value={m0r_texture_to_og(&m.background_texture)}
+                                                placeholder="esoui/art/icons/blank.dds"
+                                                title={"Custom icon"}
+                                                style="
+                                                    width: 20em;
+                                                    height: 1em;
+                                                    padding: 0.5em;
+                                                    resize: none;
+                                                "
+                                            />
+                                            <h3 style="text-align:center;margin:10px 0px 1em 0px;">{"Change Colour"}</h3>
+                                            <textarea
+                                                oninput={Callback::from(move |e: InputEvent| {
+                                                    let inp: HtmlInputElement = e.target_unchecked_into();
+                                                    upd_colour.emit((idx, "colour".to_string(), inp.value()));
+                                                })}
+                                                placeholder={
+                                                    let (r, g, b, a) = m.colour;
+                                                    let rgba_hex = rgba_to_hex_string((r, g, b, a));
+                                                    format!("{}", rgba_hex)
+                                                }
+                                                title={"Hex Code"}
+                                                style="
+                                                    width: min-content;
+                                                    height: 1em;
+                                                    padding: 0.5em;
+                                                    resize: none;
+                                                "
+                                            />
+                                            <textarea
+                                                oninput={Callback::from(move |e: InputEvent| {
+                                                    let inp: HtmlInputElement = e.target_unchecked_into();
+                                                    let raw = inp.value();
+                                                    let nums: Vec<u8> = raw
+                                                        .trim()
+                                                        .trim_start_matches('(')
+                                                        .trim_end_matches(')')
+                                                        .split(',')
+                                                        .filter_map(|p| p.trim().parse::<u8>().ok())
+                                                        .collect();
+                                                    if nums.len() >= 4 {
+                                                        let r = nums[0];
+                                                        let g = nums[1];
+                                                        let b = nums[2];
+                                                        let a = nums[3];
+                                                        upd_colour_rgba.emit((idx, "colour_tuple".to_string(), format!("{}, {}, {}, {}", r, g, b, a)));
+                                                    }
+                                                })}
+                                                placeholder={
+                                                    let (r, g, b, a) = m.colour;
+                                                    format!("({}, {}, {}, {})", r, g, b, a)
+                                                }
+                                                title={"R, G, B, A"}
+                                                style="
+                                                    min-width: min-content;
+                                                    height: 1em;
+                                                    padding: 0.5em;
+                                                    resize: none;
+                                                "
+                                            />
+                                        </>
+                                    },
+                                    _ => {html!{}}
+                                }
+                            }
                         </div>
                     </div>
                     }
@@ -590,7 +935,7 @@ fn app() -> Html {
     let zone_ids: Vec<u16> = zones.iter().map(|z| z.id).collect();
     let selected_zone_index = use_state(|| 0_usize);
     let selected_map_index = use_state(|| 0_usize);
-    let elms_input = use_state(|| String::new());
+    let marker_input = use_state(|| String::new());
     let parsed_markers = use_state(|| HashMap::<u16, Vec<Marker>>::new());
     let parsed_lines = use_state(|| HashMap::<u16, Vec<BreadcrumbLine>>::new());
     let zoom = use_state(|| 1.0);
@@ -774,7 +1119,7 @@ fn app() -> Html {
     };
 
     let oninput = {
-        let elms_input = elms_input.clone();
+        let elms_input = marker_input.clone();
         let parsed_markers = parsed_markers.clone();
         let parsed_lines = parsed_lines.clone();
         let zones = zones.clone();
@@ -786,16 +1131,23 @@ fn app() -> Html {
             elms_input.set(v.clone());
 
             if !v.is_empty() {
-                // let new_map = parse_elms_string(&v, zones.clone());
-                // web_sys::console::log_1(&format!("parsed_markers map entries: {}", new_map.len()).into());
-                // parsed_markers.set(new_map);
+                let new_m0r_markers: HashMap<u16, Vec<Marker>> = parse_m0r_string(&v, zones.clone());
 
-                // let new_lines = parse_lines_string(&v, zones.clone());
-                // parsed_lines.set(new_lines);
+                let new_elms_markers = parse_elms_string(&v, zones.clone());
 
-                let new_m0r_markers = parse_m0r_string(&v, zones.clone());
-                // web_sys::console::log_1(&format!("parsed_markers m0r map entries: {}", new_m0r_markers.len()).into());
-                parsed_markers.set(new_m0r_markers);
+                let mut combined_markers = new_m0r_markers;
+
+                for (key, mut markers) in new_elms_markers {
+                    combined_markers
+                        .entry(key)
+                        .and_modify(|existing| existing.append(&mut markers))
+                        .or_insert(markers);
+                }
+
+                parsed_markers.set(combined_markers);
+
+                let new_lines = parse_lines_string(&v, zones.clone());
+                parsed_lines.set(new_lines);
             } else {
                 parsed_markers.set(HashMap::new());
                 parsed_lines.set(HashMap::new());
@@ -839,11 +1191,13 @@ fn app() -> Html {
         );
     }
 
+    let do_redraw = use_state(|| false);
     let update_elms_input = {
         let parsed_markers = parsed_markers.clone();
         let parsed_lines = parsed_lines.clone();
-        let elms_input = elms_input.clone();
+        let elms_input = marker_input.clone();
         let selected_zone_index = selected_zone_index.clone();
+        let redraw = do_redraw.clone();
         let zone_ids = zone_ids.clone();
 
         Callback::from(move |update: (Option<Vec<Marker>>, Option<Vec<BreadcrumbLine>>)| {
@@ -863,22 +1217,13 @@ fn app() -> Html {
             let markers_map = (*parsed_markers).clone();
             let lines_map = (*parsed_lines).clone();
 
-            let mut combined = String::new();
-            let markers_str = build_m0r_string(&markers_map);
+            let m0r_markers_str = build_m0r_string(&markers_map);
+            let elms_markers_str = build_elms_string(&markers_map);
             let lines_str = lines_to_string(&lines_map);
 
-            if !markers_str.trim().is_empty() && !lines_str.trim().is_empty() {
-                combined.push_str(&markers_str);
-                combined.push('\n');
-                combined.push_str(&lines_str);
-            } else {
-                combined.push_str(&markers_str);
-                combined.push_str(&lines_str);
-            }
-
-            if combined.trim() != elms_input.trim() {
-                elms_input.set(combined);
-            }
+            let combined = format!("{}\n{}\n{}", m0r_markers_str, elms_markers_str, lines_str);
+            elms_input.set(combined);
+            redraw.set(!*redraw);
         })
     };
 
@@ -1030,6 +1375,7 @@ fn app() -> Html {
                     pan={pan}
                     width={canvas_width}
                     height={canvas_height}
+                    force_redraw={*do_redraw}
                 />
             </div>
 
@@ -1085,7 +1431,7 @@ fn app() -> Html {
                 <div> 
                     <textarea
                         oninput={oninput}
-                        value={(*elms_input).clone()}
+                        value={(*marker_input).clone()}
                         autofocus=true
                         placeholder="Paste an Elm's string to view and modify it. This will change the selected zone automatically. Right click to place a new marker. Note that a player is approximately 100 units (1 metre) wide."
                         style="

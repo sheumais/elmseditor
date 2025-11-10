@@ -1,8 +1,10 @@
 use std::{collections::{HashMap, HashSet}, hash::{Hash, Hasher}, str::from_utf8};
 
+use js_sys::Date;
 use regex::Regex;
 
 use crate::zone::{Map, Zone};
+use MarkerIcon::{Elms, M0r};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Marker {
@@ -53,7 +55,7 @@ pub struct M0rMarker {
     /// (Pitch, Yaw)
     /// 
     /// If none, always faces player (floating)
-    pub orientation: Option<(i8, i8)>,
+    pub orientation: Option<(i8, i16)>,
     pub active: bool,
     pub id: u16,
     pub map_id: u16
@@ -83,7 +85,7 @@ impl Hash for M0rMarker {
         if let Some((pitch, yaw)) = self.orientation {
             (pitch, yaw).hash(state);
         } else {
-            None::<(i8, i8)>.hash(state);
+            None::<(i8, i16)>.hash(state);
         }
         self.size.to_bits().hash(state);
     }
@@ -131,6 +133,10 @@ pub fn set_marker_active(m: &mut Marker, a: bool) {
     }
 }
 
+pub enum MarkerTypes {
+    Elms,
+    M0r,
+}
 
 #[derive(Debug, Clone)]
 pub struct BreadcrumbLine {
@@ -241,16 +247,199 @@ pub enum MarkerIcon {
     M0r(M0rTexture)
 }
 
-pub const ALL_ICONS: &[&str] = &[
-    "1.png", "2.png", "3.png", "4.png", "5.png", "6.png", "7.png", "8.png", "9.png", "10.png", "11.png", "12.png",
-    "arrow.png", "squares/marker_lightblue.png", "squares/square_pink.png", "squares/squaretwo_pink.png", "squares/square_yellow.png", "squares/squaretwo_yellow.png",
-    "squares/square_blue.png", "squares/squaretwo_blue.png", "squares/squaretwo_blue_one.png", "squares/squaretwo_blue_two.png", "squares/squaretwo_blue_three.png", "squares/squaretwo_blue_four.png",
-    "squares/square_green.png", "squares/squaretwo_green.png", "squares/squaretwo_green_one.png", "squares/squaretwo_green_two.png", "squares/squaretwo_green_three.png", "squares/squaretwo_green_four.png",
-    "squares/square_orange_OT.png", "squares/square_orange.png", "squares/squaretwo_orange.png", "squares/squaretwo_orange_one.png", "squares/squaretwo_orange_two.png", "squares/squaretwo_orange_three.png", "squares/squaretwo_orange_four.png",
-    "squares/square_red_MT.png", "squares/square_red.png", "squares/squaretwo_red.png", "squares/squaretwo_red_one.png", "squares/squaretwo_red_two.png", "squares/squaretwo_red_three.png", "squares/squaretwo_red_four.png",
-    "a.png", "b.png", "c.png", "d.png", "e.png", "f.png", "g.png", "h.png", "i.png", "j.png", "k.png", "l.png", "m.png", "n.png", "o.png", "p.png", "q.png", "r.png", "s.png", "t.png", "u.png", "v.png", "w.png", "x.png", "y.png", "z.png",
-    "sharkpog.png", 
-    //"unknown.png", // inaccessible
+pub const ALL_ELMS_ICONS: &[ElmsIcon] = &[
+    ElmsIcon::Num(1),
+    ElmsIcon::Num(2),
+    ElmsIcon::Num(3),
+    ElmsIcon::Num(4),
+    ElmsIcon::Num(5),
+    ElmsIcon::Num(6),
+    ElmsIcon::Num(7),
+    ElmsIcon::Num(8),
+    ElmsIcon::Num(9),
+    ElmsIcon::Num(10),
+    ElmsIcon::Num(11),
+    ElmsIcon::Num(12),
+    ElmsIcon::Arrow,
+    ElmsIcon::MarkerLightBlue,
+    ElmsIcon::SquareBlue,
+    ElmsIcon::SquareGreen,
+    ElmsIcon::SquareOrange,
+    ElmsIcon::SquareOrangeOT,
+    ElmsIcon::SquarePink,
+    ElmsIcon::SquareRed,
+    ElmsIcon::SquareRedMT,
+    ElmsIcon::SquareYellow,
+    ElmsIcon::SquareTwoBlue,
+    ElmsIcon::SquareTwoBlueOne,
+    ElmsIcon::SquareTwoBlueTwo,
+    ElmsIcon::SquareTwoBlueThree,
+    ElmsIcon::SquareTwoBlueFour,
+    ElmsIcon::SquareTwoGreen,
+    ElmsIcon::SquareTwoGreenOne,
+    ElmsIcon::SquareTwoGreenTwo,
+    ElmsIcon::SquareTwoGreenThree,
+    ElmsIcon::SquareTwoGreenFour,
+    ElmsIcon::SquareTwoOrange,
+    ElmsIcon::SquareTwoOrangeOne,
+    ElmsIcon::SquareTwoOrangeTwo,
+    ElmsIcon::SquareTwoOrangeThree,
+    ElmsIcon::SquareTwoOrangeFour,
+    ElmsIcon::SquareTwoPink,
+    ElmsIcon::SquareTwoRed,
+    ElmsIcon::SquareTwoRedOne,
+    ElmsIcon::SquareTwoRedTwo,
+    ElmsIcon::SquareTwoRedThree,
+    ElmsIcon::SquareTwoRedFour,
+    ElmsIcon::SquareTwoYellow,
+    ElmsIcon::Letter('a'),
+    ElmsIcon::Letter('b'),
+    ElmsIcon::Letter('c'),
+    ElmsIcon::Letter('d'),
+    ElmsIcon::Letter('e'),
+    ElmsIcon::Letter('f'),
+    ElmsIcon::Letter('g'),
+    ElmsIcon::Letter('h'),
+    ElmsIcon::Letter('i'),
+    ElmsIcon::Letter('j'),
+    ElmsIcon::Letter('k'),
+    ElmsIcon::Letter('l'),
+    ElmsIcon::Letter('m'),
+    ElmsIcon::Letter('n'),
+    ElmsIcon::Letter('o'),
+    ElmsIcon::Letter('p'),
+    ElmsIcon::Letter('q'),
+    ElmsIcon::Letter('r'),
+    ElmsIcon::Letter('s'),
+    ElmsIcon::Letter('t'),
+    ElmsIcon::Letter('u'),
+    ElmsIcon::Letter('v'),
+    ElmsIcon::Letter('w'),
+    ElmsIcon::Letter('x'),
+    ElmsIcon::Letter('y'),
+    ElmsIcon::Letter('z'),
+    ElmsIcon::SharkPog,
+    ElmsIcon::Unknown,
+];
+
+pub const ALL_M0R_ICONS: &[M0rTexture] = &[
+    M0rTexture::Known(M0rIcon::Blank),
+    M0rTexture::Known(M0rIcon::Circle),
+    M0rTexture::Known(M0rIcon::Hexagon),
+    M0rTexture::Known(M0rIcon::Square),
+    M0rTexture::Known(M0rIcon::Diamond),
+    M0rTexture::Known(M0rIcon::Octagon),
+    M0rTexture::Known(M0rIcon::Chevron),
+    M0rTexture::Known(M0rIcon::SharkPog),
+    M0rTexture::Known(M0rIcon::AllianceBadgeAldmeri),
+    M0rTexture::Known(M0rIcon::AllianceBadgeEbonheart),
+    M0rTexture::Known(M0rIcon::AllianceBadgeDaggerfall),
+    M0rTexture::Known(M0rIcon::RoleIconDPS),
+    M0rTexture::Known(M0rIcon::RoleIconTank),
+    M0rTexture::Known(M0rIcon::RoleIconHealer),
+    M0rTexture::Known(M0rIcon::ClassDragonknight),
+    M0rTexture::Known(M0rIcon::ClassSorcerer),
+    M0rTexture::Known(M0rIcon::ClassNightblade),
+    M0rTexture::Known(M0rIcon::ClassWarden),
+    M0rTexture::Known(M0rIcon::ClassNecromancer),
+    M0rTexture::Known(M0rIcon::ClassTemplar),
+    M0rTexture::Known(M0rIcon::ClassArcanist),
+];
+
+pub const ALL_ICONS: &[MarkerIcon] = &[
+    Elms(ElmsIcon::Num(1)),
+    Elms(ElmsIcon::Num(2)),
+    Elms(ElmsIcon::Num(3)),
+    Elms(ElmsIcon::Num(4)),
+    Elms(ElmsIcon::Num(5)),
+    Elms(ElmsIcon::Num(6)),
+    Elms(ElmsIcon::Num(7)),
+    Elms(ElmsIcon::Num(8)),
+    Elms(ElmsIcon::Num(9)),
+    Elms(ElmsIcon::Num(10)),
+    Elms(ElmsIcon::Num(11)),
+    Elms(ElmsIcon::Num(12)),
+    Elms(ElmsIcon::Arrow),
+    Elms(ElmsIcon::MarkerLightBlue),
+    Elms(ElmsIcon::SquareBlue),
+    Elms(ElmsIcon::SquareGreen),
+    Elms(ElmsIcon::SquareOrange),
+    Elms(ElmsIcon::SquareOrangeOT),
+    Elms(ElmsIcon::SquarePink),
+    Elms(ElmsIcon::SquareRed),
+    Elms(ElmsIcon::SquareRedMT),
+    Elms(ElmsIcon::SquareYellow),
+    Elms(ElmsIcon::SquareTwoBlue),
+    Elms(ElmsIcon::SquareTwoBlueOne),
+    Elms(ElmsIcon::SquareTwoBlueTwo),
+    Elms(ElmsIcon::SquareTwoBlueThree),
+    Elms(ElmsIcon::SquareTwoBlueFour),
+    Elms(ElmsIcon::SquareTwoGreen),
+    Elms(ElmsIcon::SquareTwoGreenOne),
+    Elms(ElmsIcon::SquareTwoGreenTwo),
+    Elms(ElmsIcon::SquareTwoGreenThree),
+    Elms(ElmsIcon::SquareTwoGreenFour),
+    Elms(ElmsIcon::SquareTwoOrange),
+    Elms(ElmsIcon::SquareTwoOrangeOne),
+    Elms(ElmsIcon::SquareTwoOrangeTwo),
+    Elms(ElmsIcon::SquareTwoOrangeThree),
+    Elms(ElmsIcon::SquareTwoOrangeFour),
+    Elms(ElmsIcon::SquareTwoPink),
+    Elms(ElmsIcon::SquareTwoRed),
+    Elms(ElmsIcon::SquareTwoRedOne),
+    Elms(ElmsIcon::SquareTwoRedTwo),
+    Elms(ElmsIcon::SquareTwoRedThree),
+    Elms(ElmsIcon::SquareTwoRedFour),
+    Elms(ElmsIcon::SquareTwoYellow),
+    Elms(ElmsIcon::Letter('a')),
+    Elms(ElmsIcon::Letter('b')),
+    Elms(ElmsIcon::Letter('c')),
+    Elms(ElmsIcon::Letter('d')),
+    Elms(ElmsIcon::Letter('e')),
+    Elms(ElmsIcon::Letter('f')),
+    Elms(ElmsIcon::Letter('g')),
+    Elms(ElmsIcon::Letter('h')),
+    Elms(ElmsIcon::Letter('i')),
+    Elms(ElmsIcon::Letter('j')),
+    Elms(ElmsIcon::Letter('k')),
+    Elms(ElmsIcon::Letter('l')),
+    Elms(ElmsIcon::Letter('m')),
+    Elms(ElmsIcon::Letter('n')),
+    Elms(ElmsIcon::Letter('o')),
+    Elms(ElmsIcon::Letter('p')),
+    Elms(ElmsIcon::Letter('q')),
+    Elms(ElmsIcon::Letter('r')),
+    Elms(ElmsIcon::Letter('s')),
+    Elms(ElmsIcon::Letter('t')),
+    Elms(ElmsIcon::Letter('u')),
+    Elms(ElmsIcon::Letter('v')),
+    Elms(ElmsIcon::Letter('w')),
+    Elms(ElmsIcon::Letter('x')),
+    Elms(ElmsIcon::Letter('y')),
+    Elms(ElmsIcon::Letter('z')),
+    Elms(ElmsIcon::SharkPog),
+    Elms(ElmsIcon::Unknown),
+    M0r(M0rTexture::Known(M0rIcon::Blank)),
+    M0r(M0rTexture::Known(M0rIcon::Circle)),
+    M0r(M0rTexture::Known(M0rIcon::Hexagon)),
+    M0r(M0rTexture::Known(M0rIcon::Square)),
+    M0r(M0rTexture::Known(M0rIcon::Diamond)),
+    M0r(M0rTexture::Known(M0rIcon::Octagon)),
+    M0r(M0rTexture::Known(M0rIcon::Chevron)),
+    M0r(M0rTexture::Known(M0rIcon::SharkPog)),
+    M0r(M0rTexture::Known(M0rIcon::AllianceBadgeAldmeri)),
+    M0r(M0rTexture::Known(M0rIcon::AllianceBadgeEbonheart)),
+    M0r(M0rTexture::Known(M0rIcon::AllianceBadgeDaggerfall)),
+    M0r(M0rTexture::Known(M0rIcon::RoleIconDPS)),
+    M0r(M0rTexture::Known(M0rIcon::RoleIconTank)),
+    M0r(M0rTexture::Known(M0rIcon::RoleIconHealer)),
+    M0r(M0rTexture::Known(M0rIcon::ClassDragonknight)),
+    M0r(M0rTexture::Known(M0rIcon::ClassSorcerer)),
+    M0r(M0rTexture::Known(M0rIcon::ClassNightblade)),
+    M0r(M0rTexture::Known(M0rIcon::ClassWarden)),
+    M0r(M0rTexture::Known(M0rIcon::ClassNecromancer)),
+    M0r(M0rTexture::Known(M0rIcon::ClassTemplar)),
+    M0r(M0rTexture::Known(M0rIcon::ClassArcanist)),
 ];
 
 fn find_best_map<'a>(x: i32, y: i32, z: i32, zone: &'a Zone) -> Option<&'a Map> {
@@ -314,7 +503,7 @@ pub fn parse_elms_string(elms_string: &str, zones: Vec<Zone>) -> HashMap<u16, Ve
     result
 }
 
-pub fn markers_to_elms_string(markers_by_zone: &HashMap<u16, Vec<Marker>>) -> String {
+pub fn build_elms_string(markers_by_zone: &HashMap<u16, Vec<Marker>>) -> String {
     let mut all_zones: Vec<u16> = markers_by_zone.keys().cloned().collect();
     all_zones.sort();
 
@@ -345,20 +534,39 @@ pub fn markers_to_elms_string(markers_by_zone: &HashMap<u16, Vec<Marker>>) -> St
     result.trim().to_string()
 }
 
-fn hex_to_rgba(hex: u32) -> (u8, u8, u8, u8) {
-    if hex <= 0x00FF_FFFF {
+pub fn hex_to_rgba(hex: u32) -> (u8, u8, u8, u8) {
+    if hex <= 0xFFFFFF {
         let r = ((hex >> 16) & 0xFF) as u8;
         let g = ((hex >> 8) & 0xFF) as u8;
         let b = (hex & 0xFF) as u8;
         (r, g, b, 255)
     } else {
-        let r = (hex >> 24) as u8;
+        let r = ((hex >> 24) & 0xFF) as u8;
         let g = ((hex >> 16) & 0xFF) as u8;
         let b = ((hex >> 8) & 0xFF) as u8;
         let a = (hex & 0xFF) as u8;
         (r, g, b, a)
     }
 }
+
+pub fn rgba_to_hex(rgba: (u8, u8, u8, u8)) -> u32 {
+    let (r, g, b, a) = rgba;
+    if a == 255 {
+        ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
+    } else {
+        ((r as u32) << 24) | ((g as u32) << 16) | ((b as u32) << 8) | (a as u32)
+    }
+}
+
+pub fn rgba_to_hex_string(rgba: (u8, u8, u8, u8)) -> String {
+    let (r, g, b, a) = rgba;
+    if a == 255 {
+        format!("#{:02X}{:02X}{:02X}", r, g, b)
+    } else {
+        format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a)
+    }
+}
+
 
 pub fn parse_lines_string(lines_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<BreadcrumbLine>> {
     let mut result: HashMap<u16, Vec<BreadcrumbLine>> = HashMap::new();
@@ -523,74 +731,86 @@ const MOR_SQUAREBRACKET: &[u8] = b"\xee\x80\x82";
 const MOR_SEMICOLON: &[u8] = b"\xee\x80\x83";
 const MOR_GREATERTHAN: &[u8] = b"\xee\x80\x84";
 
+fn parse_hex_i32(s: &str) -> i32 {
+    let s = s.trim().trim_start_matches("0x");
+    if s.is_empty() {
+        return 0;
+    }
+    match i32::from_str_radix(s, 16) {
+        Ok(v) => v,
+        Err(_) => 0,
+    }
+}
+
 pub fn parse_m0r_string(m0r_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<Marker>> {
     let mut result: HashMap<u16, Vec<Marker>> = HashMap::new();
-    /* <1552]
-    1760161167]
-    8f39:7d20:11381]
-    2:1,3,4,5,6,17;1.9:13;1.5:8,14,15,16;2.5:7;5:12]
-    0:12,17;-71:10;-70:14;-60:11;-75:16;-90:9,13,15]
-    82:9;261:14;326:16;279:13;181:17;63:12;45:11;263:15;31:10]
-    ffffff:9,10,11;ffcc00:12,13,14;00ffa6:1,2,3,4,5,6,7,15;ff00e6:8,16,17]
-    ^6:1,3,4,5,6,7;^14:12;^7:9,10,11,13,14,15,16,17;^4:2,8]
-    419d:1051:11b9:,235d:bc3:343f:Jump off here,1dea:300:214d:#1,8e5:2b3:28a8:#2,1586:0:11a3:#3,7ec:30c:c6c:#4,4e94:33d:443:,534d:34c:0:SECRET\nBOSS,34fc:e38:36f1:Keep running off of\nboth cliffs ahead,18cb:4e6:2d98:Follow the chevrons\nPull each pack,9ea:147:1370:Go up and to the left\nStack on the heals on the\ntop of the hill,0:6fb:daa:,7d:4dc:fc9:Place destro ultimate down there ^,3501:e0:362:Keep running forwards.\nDon't stop.\nGo to the secret boss.,4b75:2f0:3d2:Everything will stack\non the chevron ^,60c5:731:1b4f:Healer slot taunt!,40f5:fe7:3365:----->
 
-    */
-    let pattern = regex::Regex::new(r"<(.*?)\](.*?)\](.*?)\](.*?)\](.*?)\](.*?)\](.*?)\](.*?)\](.*?)>").unwrap();
-
-    let caps = match pattern.captures(m0r_string) {
-        Some(c) => c,
-        None => {
-            eprintln!("Malformed m0r marker string");
+    let trimmed = m0r_string.trim();
+    let inner = match (trimmed.find('<'), trimmed.rfind('>')) {
+        (Some(start), Some(end)) if end > start => &trimmed[start + 1..end],
+        _ => {
+            eprintln!("Malformed m0r marker string: no enclosing <>");
             return result;
         }
     };
 
-    let zone_str = caps.get(1).map(|m| m.as_str()).unwrap_or("");
-    let timestamp = caps.get(2).map(|m| m.as_str()).unwrap_or("");
-    let mins = caps.get(3).map(|m| m.as_str()).unwrap_or("");
-    let sizes = caps.get(4).map(|m| m.as_str()).unwrap_or("");
-    let pitch = caps.get(5).map(|m| m.as_str()).unwrap_or("");
-    let yaw = caps.get(6).map(|m| m.as_str()).unwrap_or("");
-    let colour = caps.get(7).map(|m| m.as_str()).unwrap_or("");
-    let texture = caps.get(8).map(|m| m.as_str()).unwrap_or("");
-    let positions = caps.get(9).map(|m| m.as_str()).unwrap_or("");
+    let fields: Vec<&str> = inner.split(']').collect();
+    if fields.len() < 9 {
+        eprintln!(
+            "Malformed m0r marker string: expected >=9 ']' separated fields, got {}",
+            fields.len()
+        );
+        return result;
+    }
 
-    let zone_id: u16 = zone_str.parse().unwrap_or(0);
+    let zone_str = fields[0].trim();
+    let mins = fields[2].trim();
+    let sizes = fields[3].trim();
+    let pitch_field = fields[4].trim();
+    let yaw_field = fields[5].trim();
+    let colour_field = fields[6].trim();
+    let texture_field = fields[7].trim();
+    let positions_field = fields[8].trim();
+
     let zone = match zones.iter().find(|z| z.id.to_string() == zone_str) {
         Some(z) => z,
-        None => {
-            return result;
-        }
+        None => return result,
     };
 
     let mins_parts: Vec<&str> = mins.split(':').collect();
-    let min_x = i32::from_str_radix(mins_parts.get(0).unwrap_or(&"0"), 16).unwrap_or(0);
-    let min_y = i32::from_str_radix(mins_parts.get(1).unwrap_or(&"0"), 16).unwrap_or(0);
-    let min_z = i32::from_str_radix(mins_parts.get(2).unwrap_or(&"0"), 16).unwrap_or(0);
+    let min_x = parse_hex_i32(mins_parts.get(0).unwrap_or(&"0"));
+    let min_y = parse_hex_i32(mins_parts.get(1).unwrap_or(&"0"));
+    let min_z = parse_hex_i32(mins_parts.get(2).unwrap_or(&"0"));
+
+    let unescape_text = |s: &str| {
+        let mut t = s.to_string();
+        t = t.replace(std::str::from_utf8(MOR_COLON).unwrap_or("::"), ":");
+        t = t.replace(std::str::from_utf8(MOR_COMMA).unwrap_or(","), ",");
+        t = t.replace(std::str::from_utf8(MOR_SQUAREBRACKET).unwrap_or("]"), "]");
+        t = t.replace(std::str::from_utf8(MOR_SEMICOLON).unwrap_or(";"), ";");
+        t = t.replace(std::str::from_utf8(MOR_GREATERTHAN).unwrap_or(">"), ">");
+        t = t.replace(r#"\\n"#, "\n");
+        t
+    };
 
     let mut markers: Vec<M0rMarker> = Vec::new();
-
-    for chunk in positions.split(',') {
-        let parts: Vec<&str> = chunk.split(':').collect();
+    for chunk in positions_field.split(',') {
+        let parts: Vec<&str> = chunk.trim().split(':').collect();
         if parts.len() < 3 {
             continue;
         }
 
-        let cx = i32::from_str_radix(parts[0], 16).unwrap_or(0) + min_x;
-        let cy = i32::from_str_radix(parts[1], 16).unwrap_or(0) + min_y;
-        let cz = i32::from_str_radix(parts[2], 16).unwrap_or(0) + min_z;
+        let cx = parse_hex_i32(parts[0]) + min_x;
+        let cy = parse_hex_i32(parts[1]) + min_y;
+        let cz = parse_hex_i32(parts[2]) + min_z;
 
-        let map = find_best_map(cx, cy, cz, zone).unwrap();
+        let map = match find_best_map(cx, cy, cz, zone) {
+            Some(m) => m,
+            None => continue,
+        };
 
-        let text_raw = parts.get(3).map(|t| *t).unwrap_or("");
-        let mut unescaped_text = text_raw
-            .replace(from_utf8(MOR_COLON).unwrap(), ":")
-            .replace(from_utf8(MOR_COMMA).unwrap(), ",")
-            .replace(from_utf8(MOR_SQUAREBRACKET).unwrap(), "]")
-            .replace(from_utf8(MOR_SEMICOLON).unwrap(), ";")
-            .replace(from_utf8(MOR_GREATERTHAN).unwrap(), ">");
-
+        let text_raw = parts.get(3).copied().unwrap_or("");
+        let mut unescaped_text = unescape_text(text_raw);
         if unescaped_text.is_empty() {
             unescaped_text = String::new();
         }
@@ -599,11 +819,7 @@ pub fn parse_m0r_string(m0r_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<
             id: markers.len() as u16,
             map_id: map.map_id,
             active: true,
-            position: Position3D {
-                x: cx as i32,
-                y: cy as i32,
-                z: cz as i32,
-            },
+            position: Position3D { x: cx, y: cy, z: cz },
             background_texture: M0rTexture::None,
             text: unescaped_text.into(),
             size: 1.0,
@@ -614,13 +830,15 @@ pub fn parse_m0r_string(m0r_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<
         markers.push(new_marker);
     }
 
-    for segment in sizes.split(';') {
+    let parse_index = |s: &str| s.parse::<usize>().ok().and_then(|i| i.checked_sub(1));
+
+    for segment in sizes.split(';').map(str::trim).filter(|s| !s.is_empty()) {
         if let Some((size_str, idx_str)) = segment.split_once(':') {
             if let Ok(size) = size_str.parse::<f32>() {
-                for idx in idx_str.split(',') {
-                    if let Ok(i) = idx.parse::<usize>() {
-                        if let Some(icon) = markers.get_mut(i) {
-                            icon.size = size;
+                for idx in idx_str.split(',').map(str::trim) {
+                    if let Some(i) = parse_index(idx) {
+                        if let Some(marker) = markers.get_mut(i) {
+                            marker.size = size;
                         }
                     }
                 }
@@ -628,14 +846,14 @@ pub fn parse_m0r_string(m0r_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<
         }
     }
 
-    for segment in colour.split(';') {
+    for segment in colour_field.split(';').map(str::trim).filter(|s| !s.is_empty()) {
         if let Some((hex, idx_str)) = segment.split_once(':') {
-            if let Ok(hex_val) = u32::from_str_radix(hex, 16) {
-                let floats = hex_to_rgba(hex_val);
-                for idx in idx_str.split(',') {
-                    if let Ok(i) = idx.parse::<usize>() {
-                        if let Some(icon) = markers.get_mut(i) {
-                            icon.colour = floats;
+            if let Ok(hex_val) = u32::from_str_radix(hex.trim_start_matches("0x"), 16) {
+                let (r, g, b, a) = hex_to_rgba(hex_val);
+                for idx in idx_str.split(',').map(str::trim) {
+                    if let Some(i) = parse_index(idx) {
+                        if let Some(marker) = markers.get_mut(i) {
+                            marker.colour = (r, g, b, a);
                         }
                     }
                 }
@@ -643,13 +861,14 @@ pub fn parse_m0r_string(m0r_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<
         }
     }
 
-    for segment in pitch.split(';') {
+    for segment in pitch_field.split(';').map(str::trim).filter(|s| !s.is_empty()) {
         if let Some((p_str, idx_str)) = segment.split_once(':') {
             if let Ok(pitch) = p_str.parse::<i8>() {
-                for idx in idx_str.split(',') {
-                    if let Ok(i) = idx.parse::<usize>() {
-                        if let Some(icon) = markers.get_mut(i) {
-                            icon.orientation.unwrap_or((0, 0)).0 = pitch;
+                for idx in idx_str.split(',').map(str::trim) {
+                    if let Some(i) = parse_index(idx) {
+                        if let Some(marker) = markers.get_mut(i) {
+                            let yaw = marker.orientation.map(|(_, y)| y).unwrap_or(0);
+                            marker.orientation = Some((pitch, yaw));
                         }
                     }
                 }
@@ -657,13 +876,14 @@ pub fn parse_m0r_string(m0r_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<
         }
     }
 
-    for segment in yaw.split(';') {
+    for segment in yaw_field.split(';').map(str::trim).filter(|s| !s.is_empty()) {
         if let Some((y_str, idx_str)) = segment.split_once(':') {
-            if let Ok(yaw) = y_str.parse::<i8>() {
-                for idx in idx_str.split(',') {
-                    if let Ok(i) = idx.parse::<usize>() {
-                        if let Some(icon) = markers.get_mut(i) {
-                            icon.orientation.unwrap_or((0, 0)).1 = yaw;
+            if let Ok(yaw) = y_str.parse::<i16>() {
+                for idx in idx_str.split(',').map(str::trim) {
+                    if let Some(i) = parse_index(idx) {
+                        if let Some(marker) = markers.get_mut(i) {
+                            let pitch = marker.orientation.map(|(p, _)| p).unwrap_or(0);
+                            marker.orientation = Some((pitch, yaw));
                         }
                     }
                 }
@@ -671,35 +891,33 @@ pub fn parse_m0r_string(m0r_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<
         }
     }
 
-    for segment in texture.split(';') {
+    for segment in texture_field.split(';').map(str::trim).filter(|s| !s.is_empty()) {
         if let Some((tex_str, idx_str)) = segment.split_once(':') {
-            for idx in idx_str.split(',') {
-                if let Ok(i) = idx.parse::<usize>() {
-                    if let Some(icon) = markers.get_mut(i) {
-                        icon.background_texture = M0rTexture::from(tex_str);
+            for idx in idx_str.split(',').map(str::trim) {
+                if let Some(i) = parse_index(idx) {
+                    if let Some(marker) = markers.get_mut(i) {
+                        marker.background_texture = M0rTexture::from(tex_str);
                     }
                 }
             }
         }
     }
 
-    let returned_markers = markers.iter().map(|i| Marker::M0r(i.clone())).collect();
-
+    let returned_markers = markers.into_iter().map(Marker::M0r).collect::<Vec<_>>();
     result.insert(zone.id, returned_markers);
-    println!("{result:?}");
+
     result
+}
+
+pub fn get_timestamp() -> String {
+    let timestamp = Date::now() / 1000.0;
+    timestamp.floor().to_string()
 }
 
 pub fn build_m0r_string(markers_by_zone: &HashMap<u16, Vec<Marker>>) -> String {
     let mut result = String::new();
-    let zones: Vec<u16> = markers_by_zone.keys().cloned().collect();
 
     for (zone_id, markers) in markers_by_zone {
-        let zone = match zones.iter().find(|z| **z == *zone_id) {
-            Some(z) => z,
-            None => continue,
-        };
-
         if markers.is_empty() {
             continue;
         }
@@ -715,106 +933,119 @@ pub fn build_m0r_string(markers_by_zone: &HashMap<u16, Vec<Marker>>) -> String {
             min_z.max(0) as u32
         );
 
-        let timestamp = "0";
-
-        let mut sizes: Vec<String> = Vec::new();
-        let mut pitches: Vec<String> = Vec::new();
-        let mut yaws: Vec<String> = Vec::new();
-        let mut colours: Vec<String> = Vec::new();
-        let mut textures: Vec<String> = Vec::new();
+        let timestamp = get_timestamp();
 
         let mut size_groups: HashMap<String, Vec<usize>> = HashMap::new();
         let mut pitch_groups: HashMap<i8, Vec<usize>> = HashMap::new();
-        let mut yaw_groups: HashMap<i8, Vec<usize>> = HashMap::new();
+        let mut yaw_groups: HashMap<i16, Vec<usize>> = HashMap::new();
         let mut colour_groups: HashMap<u32, Vec<usize>> = HashMap::new();
-        let mut texture_groups: HashMap<String, Vec<usize>> = HashMap::new();
+        let mut texture_groups: HashMap<M0rTexture, Vec<usize>> = HashMap::new();
 
-        let mut positions = Vec::new();
+        let mut positions: Vec<String> = Vec::new();
 
-        for (i, marker) in markers.iter().enumerate() {
-            match marker {
-                Marker::M0r(marker) => {
-                    let pos = marker.position;
-                    let cx = (pos.x - min_x) as u32;
-                    let cy = (pos.y - min_y) as u32;
-                    let cz = (pos.z - min_z) as u32;
+        for (i, marker_enum) in markers.iter().enumerate() {
+            if let Marker::M0r(marker) = marker_enum {
+                if !marker.active {continue;}
+                let pos = marker.position;
+                let cx = (pos.x - min_x) as u32;
+                let cy = (pos.y - min_y) as u32;
+                let cz = (pos.z - min_z) as u32;
 
-                    let mut text = marker.text.clone().unwrap_or("".to_string());
-                    text = text
-                        .replace(":", from_utf8(MOR_COLON).unwrap())
-                        .replace(",", from_utf8(MOR_COMMA).unwrap())
-                        .replace("]", from_utf8(MOR_SQUAREBRACKET).unwrap())
-                        .replace(";", from_utf8(MOR_SEMICOLON).unwrap())
-                        .replace(">", from_utf8(MOR_GREATERTHAN).unwrap())
-                        .replace("\n", "\\n");
+                let mut text = marker.text.clone().unwrap_or_else(|| "".to_string());
+                text = text
+                    .replace(":", from_utf8(MOR_COLON).unwrap_or("::"))
+                    .replace(",", from_utf8(MOR_COMMA).unwrap_or(","))
+                    .replace("]", from_utf8(MOR_SQUAREBRACKET).unwrap_or("]"))
+                    .replace(";", from_utf8(MOR_SEMICOLON).unwrap_or(";"))
+                    .replace(">", from_utf8(MOR_GREATERTHAN).unwrap_or(">"))
+                    .replace("\n", r#"\\n"#);
 
-                    positions.push(format!("{:X}:{:X}:{:X}:{}", cx, cy, cz, text));
+                let pos_string = format!("{:X}:{:X}:{:X}", cx, cy, cz).to_lowercase();
+                positions.push(format!("{}:{}", pos_string, text));
 
-                    size_groups.entry(marker.size.to_string()).or_default().push(i);
+                size_groups.entry(marker.size.to_string()).or_default().push(i + 1);
 
-                    if let Some((p, y)) = marker.orientation {
-                        pitch_groups.entry(p).or_default().push(i);
-                        yaw_groups.entry(y).or_default().push(i);
-                    }
-
-                    let rgba = marker.colour;
-                    let rgba_hex = ((rgba.0 as u32) << 24)
-                        | ((rgba.1 as u32) << 16)
-                        | ((rgba.2 as u32) << 8)
-                        | (rgba.3 as u32);
-                    colour_groups.entry(rgba_hex).or_default().push(i);
-                    match &marker.background_texture {
-                        M0rTexture::Unknown(texture) => texture_groups.entry(texture.to_string()).or_default().push(i),
-                        _ => {},
-                    }
+                if let Some((p, y)) = marker.orientation {
+                    pitch_groups.entry(p).or_default().push(i + 1);
+                    yaw_groups.entry(y).or_default().push(i + 1);
                 }
-                _ => (),
+
+                let (r, g, b, a) = marker.colour;
+                let rgba_hex = if a == 255 {
+                    ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
+                } else {
+                    ((a as u32) << 24) | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
+                };
+                colour_groups.entry(rgba_hex).or_default().push(i + 1);
+
+                texture_groups.entry(marker.background_texture.clone()).or_default().push(i + 1);
             }
-
-            // match &marker.background_texture() {
-            //     M0rTexture::Unknown(tex) => texture_groups.entry(tex.clone()).or_default().push(i),
-            //     _ => {}
-            // }
         }
 
-        for (size, idxs) in size_groups {
-            let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
-            sizes.push(format!("{}:{}", size, idx_str));
-        }
-        for (pitch, idxs) in pitch_groups {
-            let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
-            pitches.push(format!("{}:{}", pitch, idx_str));
-        }
-        for (yaw, idxs) in yaw_groups {
-            let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
-            yaws.push(format!("{}:{}", yaw, idx_str));
-        }
-        for (hex, idxs) in colour_groups {
-            let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
-            colours.push(format!("{:X}:{}", hex, idx_str));
-        }
-        for (tex, idxs) in texture_groups {
-            let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
-            textures.push(format!("{}:{}", tex, idx_str));
-        }
+        let sizes_str = {
+            let mut parts: Vec<String> = Vec::new();
+            for (size, idxs) in size_groups {
+                if size == "1" {continue;}
+                let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
+                parts.push(format!("{}:{}", size, idx_str));
+            }
+            parts.join(";")
+        };
+
+        let pitches_str = {
+            let mut parts: Vec<String> = Vec::new();
+            for (p, idxs) in pitch_groups {
+                let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
+                parts.push(format!("{}:{}", p, idx_str));
+            }
+            parts.join(";")
+        };
+
+        let yaws_str = {
+            let mut parts: Vec<String> = Vec::new();
+            for (y, idxs) in yaw_groups {
+                let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
+                parts.push(format!("{}:{}", y, idx_str));
+            }
+            parts.join(";")
+        };
+
+        let colours_str = {
+            let mut parts: Vec<String> = Vec::new();
+            for (hex, idxs) in colour_groups {
+                let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
+                parts.push(format!("{:x}:{}", hex, idx_str));
+            }
+            parts.join(";")
+        };
+
+        let textures_str = {
+            let mut parts: Vec<String> = Vec::new();
+            for (tex, idxs) in texture_groups {
+                let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
+                parts.push(format!("{}:{}", m0r_texture_to_og(&tex), idx_str));
+            }
+            parts.join(";")
+        };
+
+        let positions_str = positions.join(",");
 
         result.push_str(&format!(
             "<{}]{}]{}]{}]{}]{}]{}]{}]{}>",
-            zone,
+            zone_id,
             timestamp,
-            mins,
-            sizes.join(";"),
-            pitches.join(";"),
-            yaws.join(";"),
-            colours.join(";"),
-            textures.join(";"),
-            positions.join(","),
+            mins.to_lowercase(),
+            sizes_str.to_lowercase(),
+            pitches_str.to_lowercase(),
+            yaws_str.to_lowercase(),
+            colours_str.to_lowercase(),
+            textures_str,
+            positions_str
         ));
     }
 
     result
 }
-
 
 impl From<u16> for ElmsIcon {
     fn from(n: u16) -> Self {
@@ -1051,7 +1282,7 @@ impl From<M0rTexture> for String {
                     M0rIcon::AllianceBadgeAldmeri => "alliancebadge_aldmeri.png".into(),
                     M0rIcon::AllianceBadgeEbonheart => "alliancebadge_ebonheart.png".into(),
                     M0rIcon::AllianceBadgeDaggerfall => "alliancebadge_daggerfall.png".into(),
-                    M0rIcon::RoleIconDPS => "lfg_roleicon_dps".into(),
+                    M0rIcon::RoleIconDPS => "lfg_roleicon_dps.png".into(),
                     M0rIcon::RoleIconTank => "lfg_roleicon_tank.png".into(),
                     M0rIcon::RoleIconHealer => "lfg_roleicon_healer.png".into(),
                     M0rIcon::ClassDragonknight => "gp_class_dragonknight.png".into(),
@@ -1063,10 +1294,40 @@ impl From<M0rTexture> for String {
                     M0rIcon::ClassArcanist => "gp_class_arcanist.png".into(),
                 }
             },
-            M0rTexture::Unknown(p) => {
-                "../unknown.png".into()
+            M0rTexture::Unknown(_p) => {
+                "unknown.png".into()
             },
             M0rTexture::None => {"blank.png".into()},
         }
+    }
+}
+
+pub fn m0r_texture_to_og(tex: &M0rTexture) -> String {
+    match tex {
+        M0rTexture::Known(icon) => match icon {
+            M0rIcon::Circle => "^1".to_string(),
+            M0rIcon::Hexagon => "^2".to_string(),
+            M0rIcon::Square => "^3".to_string(),
+            M0rIcon::Diamond => "^4".to_string(),
+            M0rIcon::Octagon => "^5".to_string(),
+            M0rIcon::Chevron => "^6".to_string(),
+            M0rIcon::Blank => "^7".to_string(),
+            M0rIcon::SharkPog => "^8".to_string(),
+            M0rIcon::AllianceBadgeAldmeri => "^9".to_string(),
+            M0rIcon::AllianceBadgeEbonheart => "^10".to_string(),
+            M0rIcon::AllianceBadgeDaggerfall => "^11".to_string(),
+            M0rIcon::RoleIconDPS => "^12".to_string(),
+            M0rIcon::RoleIconTank => "^13".to_string(),
+            M0rIcon::RoleIconHealer => "^14".to_string(),
+            M0rIcon::ClassDragonknight => "^15".to_string(),
+            M0rIcon::ClassSorcerer => "^16".to_string(),
+            M0rIcon::ClassNightblade => "^17".to_string(),
+            M0rIcon::ClassWarden => "^18".to_string(),
+            M0rIcon::ClassNecromancer => "^19".to_string(),
+            M0rIcon::ClassTemplar => "^20".to_string(),
+            M0rIcon::ClassArcanist => "^21".to_string(),
+        },
+        M0rTexture::Unknown(s) => s.clone(),
+        M0rTexture::None => "^7".to_string(),
     }
 }
