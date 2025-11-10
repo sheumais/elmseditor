@@ -1155,7 +1155,6 @@ fn app() -> Html {
                     }
                 }
                 
-                web_sys::console::log_1(&format!("{:?}", combined_markers).into());
                 parsed_markers.set(combined_markers);
 
                 let new_lines = parse_lines_string(&v, zones.clone());
@@ -1233,7 +1232,7 @@ fn app() -> Html {
             let elms_markers_str = build_elms_string(&markers_map);
             let lines_str = lines_to_string(&lines_map);
 
-            let combined = format!("{}\n{}\n{}", m0r_markers_str, elms_markers_str, lines_str);
+            let combined = format!("{}\n{}\n{}", lines_str, m0r_markers_str, elms_markers_str).trim().to_string();
             elms_input.set(combined);
             redraw.set(!*redraw);
         })

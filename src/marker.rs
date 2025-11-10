@@ -434,12 +434,37 @@ pub fn hex_to_rgba(hex: u32) -> (u8, u8, u8, u8) {
     }
 }
 
+pub fn hex_to_argb(hex: u32) -> (u8, u8, u8, u8) {
+    if hex <= 0xFFFFFF {
+        let r = ((hex >> 16) & 0xFF) as u8;
+        let g = ((hex >> 8) & 0xFF) as u8;
+        let b = (hex & 0xFF) as u8;
+        (255, r, g, b)
+    } else {
+        let a = ((hex >> 24) & 0xFF) as u8;
+        let r = ((hex >> 16) & 0xFF) as u8;
+        let g = ((hex >> 8) & 0xFF) as u8;
+        let b = (hex & 0xFF) as u8;
+        (a, r, g, b)
+    }
+}
+
+
 pub fn rgba_to_hex_string(rgba: (u8, u8, u8, u8)) -> String {
     let (r, g, b, a) = rgba;
     if a == 255 {
         format!("#{:02X}{:02X}{:02X}", r, g, b)
     } else {
         format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a)
+    }
+}
+
+pub fn argb_to_hex_string(argb: (u8, u8, u8, u8)) -> String {
+    let (a, r, g, b) = argb;
+    if a == 255 {
+        format!("#{:02X}{:02X}{:02X}", r, g, b)
+    } else {
+        format!("#{:02X}{:02X}{:02X}{:02X}", a, r, g, b)
     }
 }
 
@@ -725,7 +750,7 @@ pub fn parse_m0r_string(m0r_string: &str, zones: Vec<Zone>) -> HashMap<u16, Vec<
     for segment in colour_field.split(';').map(str::trim).filter(|s| !s.is_empty()) {
         if let Some((hex, idx_str)) = segment.split_once(':') {
             if let Ok(hex_val) = u32::from_str_radix(hex.trim_start_matches("0x"), 16) {
-                let (r, g, b, a) = hex_to_rgba(hex_val);
+                let (a, r, g, b) = hex_to_argb(hex_val);
                 for idx in idx_str.split(',').map(str::trim) {
                     if let Some(i) = parse_index(idx) {
                         if let Some(marker) = markers.get_mut(i) {
@@ -814,7 +839,7 @@ pub fn build_m0r_string(markers_by_zone: &HashMap<u16, Vec<Marker>>) -> String {
         let mut size_groups: HashMap<String, Vec<usize>> = HashMap::new();
         let mut pitch_groups: HashMap<i8, Vec<usize>> = HashMap::new();
         let mut yaw_groups: HashMap<i16, Vec<usize>> = HashMap::new();
-        let mut colour_groups: HashMap<u32, Vec<usize>> = HashMap::new();
+        let mut colour_groups: HashMap<String, Vec<usize>> = HashMap::new();
         let mut texture_groups: HashMap<M0rTexture, Vec<usize>> = HashMap::new();
 
         let mut positions: Vec<String> = Vec::new();
@@ -847,11 +872,7 @@ pub fn build_m0r_string(markers_by_zone: &HashMap<u16, Vec<Marker>>) -> String {
                 }
 
                 let (r, g, b, a) = marker.colour;
-                let rgba_hex = if a == 255 {
-                    ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
-                } else {
-                    ((a as u32) << 24) | ((r as u32) << 16) | ((g as u32) << 8) | (b as u32)
-                };
+                let rgba_hex = argb_to_hex_string((a, r, g, b));
                 colour_groups.entry(rgba_hex).or_default().push(i + 1);
 
                 texture_groups.entry(marker.background_texture.clone()).or_default().push(i + 1);
@@ -890,7 +911,7 @@ pub fn build_m0r_string(markers_by_zone: &HashMap<u16, Vec<Marker>>) -> String {
             let mut parts: Vec<String> = Vec::new();
             for (hex, idxs) in colour_groups {
                 let idx_str = idxs.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",");
-                parts.push(format!("{:x}:{}", hex, idx_str));
+                parts.push(format!("{}:{}", hex, idx_str));
             }
             parts.join(";")
         };
