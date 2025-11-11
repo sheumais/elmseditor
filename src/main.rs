@@ -8,7 +8,7 @@ use yew_icons::{Icon, IconId};
 mod marker;
 mod zone;
 
-use crate::marker::{ALL_ELMS_ICONS, ALL_M0R_ICONS, BreadcrumbLine, ElmMarker, Marker::{self, Elms, M0r}, MarkerTypes, Position3D, build_elms_string, build_m0r_string, get_marker_id, hex_to_rgba, lines_to_string, m0r_texture_to_og, parse_elms_string, parse_lines_string, parse_m0r_string, rgba_to_hex_string, set_marker_active};
+use crate::marker::{ALL_ELMS_ICONS, ALL_M0R_ICONS, BreadcrumbLine, ElmMarker, Marker::{self, Elms, M0r}, MarkerTypes, Position3D, build_elms_string, build_m0r_string, get_marker_id, get_svg, hex_to_rgba, lines_to_string, m0r_texture_to_og, parse_elms_string, parse_lines_string, parse_m0r_string, rgba_to_hex_string, set_marker_active};
 use crate::zone::{Map, populate_zone_data};
 
 #[derive(Properties, PartialEq)]
@@ -211,6 +211,19 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                         },
                         Marker::M0r(m0r_marker) => {
                             if !m0r_marker.active { continue; }
+
+                            let nx = (m0r_marker.position.x as f64 - map.scale_data.min_x as f64)
+                                / (map.scale_data.max_x as f64 - map.scale_data.min_x as f64);
+                            let nz = (m0r_marker.position.z as f64 - map.scale_data.min_z as f64)
+                                / (map.scale_data.max_z as f64 - map.scale_data.min_z as f64);
+                            let mx = nx * w;
+                            let mz = nz * h;
+
+                            let display_size = base * (1.0 / zoom) * (1.0 + (m0r_marker.size as f64 / 8.0));
+                            let high_res_size = display_size * zoom;
+                            let dx = mx - display_size / 2.0;
+                            let dy = mz - display_size * 0.25;
+
                             let offscreen: HtmlCanvasElement = web_sys::window()
                                 .unwrap()
                                 .document()
@@ -219,6 +232,8 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                                 .unwrap()
                                 .dyn_into::<HtmlCanvasElement>()
                                 .unwrap();
+                            offscreen.set_width(high_res_size as u32);
+                            offscreen.set_height(high_res_size as u32);
 
                             let off_ctx: CanvasRenderingContext2d = offscreen
                                 .get_context("2d")
@@ -226,45 +241,40 @@ fn canvas_map(props: &CanvasMapProps) -> Html {
                                 .unwrap()
                                 .dyn_into::<CanvasRenderingContext2d>()
                                 .unwrap();
-                            let (mx, mz) = {
-                                let nx = (m0r_marker.position.x as f64 - map.scale_data.min_x as f64)
-                                    / (map.scale_data.max_x as f64 - map.scale_data.min_x as f64);
-                                let nz = (m0r_marker.position.z as f64 - map.scale_data.min_z as f64)
-                                    / (map.scale_data.max_z as f64 - map.scale_data.min_z as f64);
-                                (nx * w, nz * h)
-                            };
-
-                            //let display_size = ((1.0 + m0r_marker.size as f64) * 100.0 / map_x_range) * w;
-                            let display_size = base * (1.0 / zoom) * (1.0 + (m0r_marker.size as f64 / 5.0));
-                            let dx = mx - display_size / 2.0;
-                            let dy = mz - display_size / 2.0;
 
                             let icon_img = HtmlImageElement::new().unwrap();
                             icon_img.set_src(&format!("static/icons/m0r/{}", String::from(m0r_marker.background_texture.clone())));
-                            let rgba = format!("rgba({},{},{},{})", m0r_marker.colour.0, m0r_marker.colour.1, m0r_marker.colour.2, m0r_marker.colour.3);
+
+                            let rgba = format!(
+                                "rgba({},{},{},{})",
+                                m0r_marker.colour.0,
+                                m0r_marker.colour.1,
+                                m0r_marker.colour.2,
+                                m0r_marker.colour.3
+                            );
 
                             let draw_marker = move |ctx: &CanvasRenderingContext2d, icon: &HtmlImageElement| {
-                                offscreen.set_width(base as u32);
-                                offscreen.set_height(base as u32);
-
                                 off_ctx.set_global_composite_operation("multiply").unwrap();
+                                off_ctx.clear_rect(0.0, 0.0, high_res_size, high_res_size);
                                 off_ctx.set_fill_style_str(&rgba);
-                                off_ctx.fill_rect(0.0, 0.0, base, base);
-                                off_ctx.set_global_composite_operation("destination-in").unwrap();
-                                off_ctx.draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
-                                    icon,
-                                    0.0, 0.0,
-                                    icon.width() as f64,
-                                    icon.height() as f64,
-                                    0.0, 0.0,
-                                    base, base,
-                                ).unwrap();
+                                off_ctx.fill_rect(0.0, 0.0, high_res_size, high_res_size);
 
-                                ctx.save();
-                                ctx.translate(dx + display_size / 2.0, dy + display_size / 2.0).unwrap();
-                                ctx.scale(display_size / base, display_size / base).unwrap();
-                                ctx.draw_image_with_html_canvas_element(&offscreen, -base/2.0, -base/2.0).unwrap();
-                                ctx.restore();
+                                off_ctx.set_global_composite_operation("destination-in").unwrap();
+                                off_ctx
+                                    .draw_image_with_html_image_element_and_sw_and_sh_and_dx_and_dy_and_dw_and_dh(
+                                        icon,
+                                        0.0,
+                                        0.0,
+                                        icon.width() as f64,
+                                        icon.height() as f64,
+                                        0.0,
+                                        0.0,
+                                        high_res_size,
+                                        high_res_size,
+                                    )
+                                    .unwrap();
+
+                                ctx.draw_image_with_html_canvas_element_and_dw_and_dh(&offscreen, dx, dy, display_size, display_size).unwrap();
                             };
 
                             if icon_img.complete() {
@@ -624,12 +634,24 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                         Marker::M0r(marker) => {
                             html!{
                                 <li key={marker.id.clone()} style="display:flex;align-items:center;gap:1em;justify-content:center;padding:4px;">
-                                    <img
-                                        src={format!("static/icons/m0r/{}", String::from(marker.background_texture.clone()))}
-                                        style="height:2em;cursor:pointer;"
-                                        onclick={Callback::from(move |_| picker.set(Some(i)))}
-                                    />
-
+                                    if let Some(svg_data) = get_svg(&marker.background_texture) {
+                                        <svg
+                                            height="2em"
+                                            style="cursor:pointer;"
+                                            fill={rgba_to_hex_string(marker.colour)}
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            viewBox={svg_data.view_box.clone()}
+                                            onclick={Callback::from(move |_| picker.set(Some(i)))}
+                                        >
+                                            <path d={svg_data.path.clone()} />
+                                        </svg>
+                                    } else {
+                                        <img
+                                            src={format!("static/icons/m0r/{}", String::from(marker.background_texture.clone()))}
+                                            style="height:2em;cursor:pointer;"
+                                            onclick={Callback::from(move |_| picker.set(Some(i)))}
+                                        />
+                                    }
                                     <div class={css!("display:flex;flex-flow: column wrap; max-height: 4em;")}>
                                         {for ["x","y","z"].iter().map(move |&axis| {
                                             let up = upd.clone();

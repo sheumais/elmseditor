@@ -1169,12 +1169,12 @@ impl From<M0rTexture> for String {
             M0rTexture::Known(p) => {
                 match p {
                     M0rIcon::Blank => "blank.png".into(),
-                    M0rIcon::Circle => "circle.png".into(),
-                    M0rIcon::Hexagon => "hexagon.png".into(),
-                    M0rIcon::Square => "square.png".into(),
-                    M0rIcon::Diamond => "diamond.png".into(),
-                    M0rIcon::Octagon => "octagon.png".into(),
-                    M0rIcon::Chevron => "chevron.png".into(),
+                    M0rIcon::Circle => "circle.svg".into(),
+                    M0rIcon::Hexagon => "hexagon.svg".into(),
+                    M0rIcon::Square => "square.svg".into(),
+                    M0rIcon::Diamond => "diamond.svg".into(),
+                    M0rIcon::Octagon => "octagon.svg".into(),
+                    M0rIcon::Chevron => "chevron.svg".into(),
                     M0rIcon::SharkPog => "sharkpog.png".into(),
                     M0rIcon::AllianceBadgeAldmeri => "alliancebadge_aldmeri.png".into(),
                     M0rIcon::AllianceBadgeEbonheart => "alliancebadge_ebonheart.png".into(),
@@ -1226,5 +1226,44 @@ pub fn m0r_texture_to_og(tex: &M0rTexture) -> String {
         },
         M0rTexture::Unknown(s) => s.clone(),
         M0rTexture::None => "^7".to_string(),
+    }
+}
+
+pub struct SVGData {
+    pub path: String,
+    pub view_box: String,
+}
+
+
+pub fn get_svg(tex: &M0rTexture) -> Option<SVGData> {
+    match tex {
+        M0rTexture::Known(icon) => match icon {
+            M0rIcon::Circle => Some(SVGData {
+                path: "M127.5 252.5c69.036 0 125-55.964 125-125 0-69.0356-55.964-125-125-125-69.0356 0-125 55.9644-125 125 0 69.036 55.9644 125 125 125Z".to_string(),
+                view_box: "0 0 255 255".to_string(),
+            }),
+            M0rIcon::Hexagon => Some(SVGData {
+                path: "M64 223.5h127l64-110-64-111H64l-64 111z".to_string(),
+                view_box: "0 0 256 226".to_string(),
+            }),
+            M0rIcon::Square => Some(SVGData {
+                path: "M3 3v249h249V3z".to_string(),
+                view_box: "0 0 256 256".to_string(),
+            }),
+            M0rIcon::Diamond => Some(SVGData {
+                path: "M0 128 128 0l127 128-127 127z".to_string(),
+                view_box: "0 0 256 256".to_string(),
+            }),
+            M0rIcon::Octagon => Some(SVGData {
+                path: "M2.5 178.277V75.7233L75.7233 2.5H178.277L251.5 75.7233V178.277L178.277 251.5H75.7233z".to_string(),
+                view_box: "0 0 254 254".to_string(),
+            }),
+            M0rIcon::Chevron => Some(SVGData {
+                path: "M0 100-125 0v-100L0 0l125-100V0z".to_string(),
+                view_box: "-128 -128 256 256".to_string(),
+            }),
+            _ => None,
+        },
+        _ => None,
     }
 }
