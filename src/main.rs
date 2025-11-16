@@ -893,7 +893,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                                                 })}
                                                 placeholder={
                                                     let (r, g, b, a) = m.colour;
-                                                    let rgba_hex = rgba_to_hex_string((r, g, b, a));
+                                                    let rgba_hex = format!("#{}", rgba_to_hex_string((r, g, b, a)));
                                                     format!("{}", rgba_hex)
                                                 }
                                                 title={"Hex Code"}
