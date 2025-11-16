@@ -638,7 +638,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                                         <svg
                                             height="2em"
                                             style="cursor:pointer;"
-                                            fill={rgba_to_hex_string(marker.colour)}
+                                            fill={format!("#{}", rgba_to_hex_string(marker.colour))}
                                             xmlns="http://www.w3.org/2000/svg"
                                             viewBox={svg_data.view_box.clone()}
                                             onclick={Callback::from(move |_| picker.set(Some(i)))}
@@ -893,8 +893,7 @@ fn marker_list_panel(props: &MarkerListPanelProps) -> Html {
                                                 })}
                                                 placeholder={
                                                     let (r, g, b, a) = m.colour;
-                                                    let rgba_hex = format!("#{}", rgba_to_hex_string((r, g, b, a)));
-                                                    format!("{}", rgba_hex)
+                                                    format!("#{}", rgba_to_hex_string((r, g, b, a)))
                                                 }
                                                 title={"Hex Code"}
                                                 style="
