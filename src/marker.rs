@@ -453,18 +453,18 @@ pub fn hex_to_argb(hex: u32) -> (u8, u8, u8, u8) {
 pub fn rgba_to_hex_string(rgba: (u8, u8, u8, u8)) -> String {
     let (r, g, b, a) = rgba;
     if a == 255 {
-        format!("#{:02X}{:02X}{:02X}", r, g, b)
+        format!("{:02X}{:02X}{:02X}", r, g, b)
     } else {
-        format!("#{:02X}{:02X}{:02X}{:02X}", r, g, b, a)
+        format!("{:02X}{:02X}{:02X}{:02X}", r, g, b, a)
     }
 }
 
 pub fn argb_to_hex_string(argb: (u8, u8, u8, u8)) -> String {
     let (a, r, g, b) = argb;
     if a == 255 {
-        format!("#{:02X}{:02X}{:02X}", r, g, b)
+        format!("{:02X}{:02X}{:02X}", r, g, b)
     } else {
-        format!("#{:02X}{:02X}{:02X}{:02X}", a, r, g, b)
+        format!("{:02X}{:02X}{:02X}{:02X}", a, r, g, b)
     }
 }
 
